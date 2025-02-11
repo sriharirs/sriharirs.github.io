@@ -1,5 +1,3 @@
-
-
 import { FaceLandmarker, FilesetResolver, DrawingUtils } from "./tasks-vision.js";
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -9,6 +7,9 @@ import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
+// ^ imports, first line for mediapipe, rest for Three.js which is for 3D rendering
+
+// Map blendshapes from MediaPipe to AU (Action Units) present in the 3D model
 const blendshapesMap = {
     'browInnerUp': 'AU_1',
     'browOuterUpLeft': 'AU_2',
@@ -35,12 +36,16 @@ const blendshapesMap = {
 
 
 // Three.js preparation
+
+// Set up the Three.js scene and attach it to html element with id '3dscene'
 var container = document.getElementById( '3dscene' );
 const renderer = new THREE.WebGLRenderer( { antialias: true } );
 renderer.setPixelRatio( window.devicePixelRatio );
 renderer.setSize( container.clientWidth, container.clientHeight );
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 container.appendChild( renderer.domElement );
+
+// Set up the Three.js camera
 const camera = new THREE.PerspectiveCamera( 60, container.clientWidth / container.clientHeight, 1, 100 );
 camera.position.z = 5;
 const scene = new THREE.Scene();
@@ -53,10 +58,10 @@ const controls = new OrbitControls( camera, renderer.domElement );
 const transform = new THREE.Object3D();
 
 
-// face
-
+// Load the 3D model and find the face, eyes and teeth meshes
 let face, eyeL, eyeR, teeth;
-const eyeRotationLimit = THREE.MathUtils.degToRad( 30 );
+const eyeRotationLimitHorizontal = THREE.MathUtils.degToRad( 30 );
+const eyeRotationLimitVertical = THREE.MathUtils.degToRad( 30 );
 const ktx2Loader = new KTX2Loader()
     .setTranscoderPath( 'three/addons/jsm/libs/basis/' )
     .detectSupport( renderer );
@@ -79,10 +84,9 @@ new GLTFLoader()
                 .name( key.replace( 'blendShape1.', '' ) )
                 .listen( influences );
         }
-        // renderer.setAnimationLoop( animate );
     } );
 
-
+// Find html elements for displaying the blendshapes
 const demosSection = document.getElementById("demos");
 const column1 = document.getElementById("video-blend-shapes-column1");
 let faceLandmarker;
@@ -90,7 +94,8 @@ let runningMode = "IMAGE";
 let enableWebcamButton;
 let webcamRunning = false;
 const videoWidth = 480;
-// Preload :
+
+// Preload assets from CDN
 async function preLoadAssets() {    
     const filesetResolver = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm");
     faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
@@ -107,22 +112,17 @@ async function preLoadAssets() {
 }
 preLoadAssets();
 
-/********************************************************************
- Continuously grab image from webcam stream and detect it.
-********************************************************************/
-
+// Find the video element and canvas for rendering the results
 const video = document.getElementById("webcam");
 const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
-// Check if webcam access is supported.
 
+// Check if webcam access is supported.
 function hasGetUserMedia() {
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
 }
 
-// If webcam supported, add event listener to button for when user
-// wants to activate it.
-
+// If webcam supported, add event listener to button for when user wants to enable it
 if (hasGetUserMedia()) {
     enableWebcamButton = document.getElementById("webcamButton");
     enableWebcamButton.addEventListener("click", enableCam);
@@ -131,8 +131,7 @@ else {
     console.warn("getUserMedia() is not supported by your browser");
 }
 
-// Enable the live webcam view and start detection.
-
+// Enable the live webcam view and start detection
 function enableCam(event) {
     if (!faceLandmarker) {
         console.log("Wait! faceLandmarker not loaded yet.");
@@ -146,11 +145,11 @@ function enableCam(event) {
         webcamRunning = true;
         enableWebcamButton.innerText = "DISABLE PREDICTIONS";
     }
-    // getUsermedia parameters.
+    // getUsermedia parameters
     const constraints = {
         video: true
     };
-    // Activate the webcam stream.
+    // Activate the webcam stream
     navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
         video.srcObject = stream;
         video.addEventListener("loadeddata", predictWebcam);
@@ -160,6 +159,7 @@ let lastVideoTime = -1;
 let results = undefined;
 const drawingUtils = new DrawingUtils(canvasCtx);
 
+// This is called for every frame, it processes the video stream and detects the face landmarks
 async function predictWebcam() {
     const radio = video.videoHeight / video.videoWidth;
     video.style.width = videoWidth + "px";
@@ -168,7 +168,7 @@ async function predictWebcam() {
     canvasElement.style.height = videoWidth * radio + "px";
     canvasElement.width = video.videoWidth;
     canvasElement.height = video.videoHeight;
-    // Now let's start detecting the stream.
+    // Now let's start detecting the stream
     if (runningMode === "IMAGE") {
         runningMode = "VIDEO";
         await faceLandmarker.setOptions({ runningMode: runningMode });
@@ -178,8 +178,8 @@ async function predictWebcam() {
         lastVideoTime = video.currentTime;
         results = faceLandmarker.detectForVideo(video, nowInMs);
     }
-    // console.log("AAA: "+results.faceLandmarks);
     if (results.faceLandmarks) {
+        // If we have landmarks, draw them on the user's face
         for (const landmarks of results.faceLandmarks) {
             drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_TESSELATION, { color: "#C0C0C070", lineWidth: 1 });
             drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE, { color: "#FF3030" , lineWidth: 1});
@@ -191,23 +191,23 @@ async function predictWebcam() {
             drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS, { color: "#FF3030" , lineWidth: 1});
             drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS, { color: "#30FF30" , lineWidth: 1});
         }
-        // console.log(results);
     }
-    
-    const blendShapes = results.faceBlendshapes;
+    // If we have blendshapes, print them on the screen and draw the 3D scene
+    if (results.faceBlendshapes.length > 0) {
+        const blendShapeCategories = results.faceBlendshapes[0].categories;
+        printBlendShapes(column1, blendShapeCategories);
+        draw3dScene(results,blendShapeCategories)
+    }
 
-    const blendShapeCategories = blendShapes[0].categories;
-
-    drawBlendShapes(column1, blendShapeCategories);
-
-    // Call this function again to keep predicting when the browser is ready.
+    // If the webcam is still enabled, call this function again for the next frame
     if (webcamRunning === true) {
         window.requestAnimationFrame(predictWebcam);
     }
-    animate(results,blendShapeCategories)
+    
 }
 
-function drawBlendShapes(el, blendShapes) {
+// Print the blendshapes on the screen (the numbers visible next to video and 3D scene)
+function printBlendShapes(el, blendShapes) {
     if (!blendShapes.length) {
       return;
     }
@@ -222,35 +222,30 @@ function drawBlendShapes(el, blendShapes) {
     });
     el.innerHTML = htmlMaker;
   }
-  function animate(results, faceBlendshapes) {
+// Draw the 3D scene with the face landmarks and blendshapes
+function draw3dScene(results, faceBlendshapes) {
     if ( video.readyState >= HTMLMediaElement.HAVE_METADATA ) {
-        // const results = faceLandmarker.detectForVideo( video, Date.now() );
         if ( results.facialTransformationMatrixes.length > 0 ) {
             const facialTransformationMatrixes = results.facialTransformationMatrixes[ 0 ].data;
             transform.matrix.fromArray( facialTransformationMatrixes );
             transform.matrix.decompose( transform.position, transform.quaternion, transform.scale );
             const object = scene.getObjectByName( 'grp_transform' );
-            // object.position.x = transform.position.x;
-            // object.position.y = transform.position.z + 40;
-            // object.position.z = - transform.position.y;
+            // Update the 3D model to rotate the head
             object.rotation.x = transform.rotation.x;
             object.rotation.y = transform.rotation.y;
             object.rotation.z = transform.rotation.z;
         }
         if ( results.faceBlendshapes.length > 0 ) {
-            // const faceBlendshapes = results.faceBlendshapes[ 0 ].categories;
-            // Morph values does not exist on the eye meshes, so we map the eyes blendshape score into rotation values
+            // Tracks eye movement
             const eyeScore = {
                 leftHorizontal: 0,
                 rightHorizontal: 0,
                 leftVertical: 0,
                 rightVertical: 0,
                 };
-            console.log(faceBlendshapes);
             for ( const blendshape of faceBlendshapes ) {
                 const categoryName = blendshape.categoryName;
                 const score = blendshape.score;
-                // console.log(categoryName, score);
                 const index = face.morphTargetDictionary[ blendshapesMap[ categoryName ] ];
                 if ( index !== undefined ) {
                     face.morphTargetInfluences[ index ] = score;
@@ -285,14 +280,14 @@ function drawBlendShapes(el, blendShapes) {
                         break;
                 }
             }
-            eyeL.rotation.z = eyeScore.leftHorizontal * eyeRotationLimit;
-            eyeR.rotation.z = eyeScore.rightHorizontal * eyeRotationLimit;
-            eyeL.rotation.x = eyeScore.leftVertical * eyeRotationLimit;
-            eyeR.rotation.x = eyeScore.rightVertical * eyeRotationLimit;
+            // Apply the eye movement to the 3D model
+            eyeL.rotation.y = -eyeScore.leftHorizontal * eyeRotationLimitHorizontal;
+            eyeR.rotation.y = -eyeScore.rightHorizontal * eyeRotationLimitHorizontal;
+            eyeL.rotation.x = eyeScore.leftVertical * eyeRotationLimitVertical;
+            eyeR.rotation.x = eyeScore.rightVertical * eyeRotationLimitVertical;
         }
     }
-    // videomesh.scale.x = video.videoWidth / 100;
-    // videomesh.scale.y = video.videoHeight / 100;
+    // Render the 3D scene
     renderer.render( scene, camera );
     controls.update();
 }
