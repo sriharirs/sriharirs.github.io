@@ -20,6 +20,8 @@ const blendshapesMap = {
     'eyeWideRight': 'AU_5',
     'eyeSquintLeft': 'AU_7',
     'eyeSquintRight': 'AU_7',
+    'eyeBlinkLeft': 'AU_43',
+    'eyeBlinkRight': 'AU_43',
     'mouthSmileLeft': 'AU_12',
     'mouthSmileRight': 'AU_12',
     'mouthFrownLeft': 'AU_15',
@@ -33,7 +35,6 @@ const blendshapesMap = {
     'noseSneerLeft': 'AU_9',
     'noseSneerRight': 'AU_9',
 };
-
 
 // Three.js preparation
 
@@ -117,6 +118,15 @@ const video = document.getElementById("webcam");
 const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
 
+const videoTexture = new THREE.VideoTexture(video);
+videoTexture.minFilter = THREE.LinearFilter;
+videoTexture.maxFilter = THREE.LinearFilter;
+videoTexture.format = THREE.RGBFormat;
+videoTexture.wrapS = THREE.RepeatWrapping;
+videoTexture.repeat.x = -1;
+videoTexture.colorSpace = THREE.SRGBColorSpace;
+scene.background=videoTexture;
+
 // Check if webcam access is supported.
 function hasGetUserMedia() {
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
@@ -177,6 +187,7 @@ async function predictWebcam() {
     if (lastVideoTime !== video.currentTime) {
         lastVideoTime = video.currentTime;
         results = faceLandmarker.detectForVideo(video, nowInMs);
+        console.log(video.srcObject);
     }
     if (results.faceLandmarks) {
         // If we have landmarks, draw them on the user's face
@@ -225,6 +236,10 @@ function printBlendShapes(el, blendShapes) {
 // Draw the 3D scene with the face landmarks and blendshapes
 function draw3dScene(results, faceBlendshapes) {
     if ( video.readyState >= HTMLMediaElement.HAVE_METADATA ) {
+        if(videoTexture) {
+            videoTexture.needsUpdate = true;
+        }
+
         if ( results.facialTransformationMatrixes.length > 0 ) {
             const facialTransformationMatrixes = results.facialTransformationMatrixes[ 0 ].data;
             transform.matrix.fromArray( facialTransformationMatrixes );
@@ -243,10 +258,24 @@ function draw3dScene(results, faceBlendshapes) {
                 leftVertical: 0,
                 rightVertical: 0,
                 };
+            let eyeBlinkScore=0;
             for ( const blendshape of faceBlendshapes ) {
                 const categoryName = blendshape.categoryName;
-                const score = blendshape.score;
+                let score = blendshape.score;
                 const index = face.morphTargetDictionary[ blendshapesMap[ categoryName ] ];
+                if(categoryName=="eyeBlinkLeft" || categoryName=="eyeBlinkRight") {
+                    if(eyeBlinkScore==0)
+                    {
+                        eyeBlinkScore+=score;
+                        continue;
+                    }
+                    else {
+                        eyeBlinkScore+=score;
+                        eyeBlinkScore/=1.5;
+                        score=eyeBlinkScore;
+                    }
+                }
+
                 if ( index !== undefined ) {
                     face.morphTargetInfluences[ index ] = score;
                     teeth.morphTargetInfluences[index] = score;
