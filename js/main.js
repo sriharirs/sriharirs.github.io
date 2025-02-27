@@ -18,10 +18,10 @@ const blendshapesMap = {
     'browDownRight': 'AU_4',
     'eyeWideLeft': 'AU_5',
     'eyeWideRight': 'AU_5',
-    'eyeSquintLeft': 'AU_7',
-    'eyeSquintRight': 'AU_7',
-    'eyeBlinkLeft': 'AU_43',
-    'eyeBlinkRight': 'AU_43',
+    //'eyeSquintLeft': 'AU_46_L',
+    //'eyeSquintRight': 'AU_46_R',
+    'noseSneerLeft': 'AU_9',
+    'noseSneerRight': 'AU_9',
     'mouthSmileLeft': 'AU_12',
     'mouthSmileRight': 'AU_12',
     'mouthFrownLeft': 'AU_15',
@@ -32,8 +32,8 @@ const blendshapesMap = {
     'mouthPressLeft': 'AU_23',
     'mouthPressRight': 'AU_23',
     'jawOpen': 'AU_26',
-    'noseSneerLeft': 'AU_9',
-    'noseSneerRight': 'AU_9',
+    //'eyeBlinkLeft': 'AU_46_L',
+    //'eyeBlinkRight': 'AU_46_R'
 };
 
 // Three.js preparation
@@ -245,6 +245,15 @@ function draw3dScene(results, faceBlendshapes) {
             transform.matrix.fromArray( facialTransformationMatrixes );
             transform.matrix.decompose( transform.position, transform.quaternion, transform.scale );
             const object = scene.getObjectByName( 'grp_transform' );
+            //object.position.copy( transform.position );
+            object.position.x = transform.position.x/2 - 5 * Math.sin(transform.rotation.y);
+            object.position.y = transform.position.y/2 + 5 * Math.sin(transform.rotation.x) - 2;
+            object.position.z = transform.position.z/2;
+
+            object.scale.x = transform.scale.x*3;
+            object.scale.y = transform.scale.y*3;
+            object.scale.z = transform.scale.z*3;
+
             // Update the 3D model to rotate the head
             object.rotation.x = transform.rotation.x;
             object.rotation.y = transform.rotation.y;
@@ -258,23 +267,17 @@ function draw3dScene(results, faceBlendshapes) {
                 leftVertical: 0,
                 rightVertical: 0,
                 };
-            let eyeBlinkScore=0;
+            const eyeBlinkSquingScore = {
+                blinkLeft: 0,
+                blinkRight: 0,
+                squintLeft: 0,
+                squintRight: 0,
+            };
             for ( const blendshape of faceBlendshapes ) {
                 const categoryName = blendshape.categoryName;
                 let score = blendshape.score;
                 const index = face.morphTargetDictionary[ blendshapesMap[ categoryName ] ];
-                if(categoryName=="eyeBlinkLeft" || categoryName=="eyeBlinkRight") {
-                    if(eyeBlinkScore==0)
-                    {
-                        eyeBlinkScore+=score;
-                        continue;
-                    }
-                    else {
-                        eyeBlinkScore+=score;
-                        eyeBlinkScore/=1.5;
-                        score=eyeBlinkScore;
-                    }
-                }
+
 
                 if ( index !== undefined ) {
                     face.morphTargetInfluences[ index ] = score;
@@ -307,13 +310,48 @@ function draw3dScene(results, faceBlendshapes) {
                     case 'eyeLookDownRight':
                         eyeScore.rightVertical += score;
                         break;
+                    case 'eyeBlinkLeft':
+                        eyeBlinkSquingScore.blinkLeft += score;
+                        break;
+                    case 'eyeBlinkRight':
+                        eyeBlinkSquingScore.blinkRight += score;
+                        break;
+                    case 'eyeSquintLeft':
+                        eyeBlinkSquingScore.squintLeft += score;
+                        break;
+                    case 'eyeSquintRight':
+                        eyeBlinkSquingScore.squintRight += score;
+                        break;
                 }
             }
+
             // Apply the eye movement to the 3D model
             eyeL.rotation.y = -eyeScore.leftHorizontal * eyeRotationLimitHorizontal;
             eyeR.rotation.y = -eyeScore.rightHorizontal * eyeRotationLimitHorizontal;
             eyeL.rotation.x = eyeScore.leftVertical * eyeRotationLimitVertical;
             eyeR.rotation.x = eyeScore.rightVertical * eyeRotationLimitVertical;
+        
+            let eye43 = (eyeBlinkSquingScore.blinkLeft + eyeBlinkSquingScore.blinkRight) * 0.65;
+            // za razliku 0.2 eye43 se smanjuje za 0.3
+            // za razliku 0 eye43 se smanjuje 0
+            let absdiff=Math.abs(eyeBlinkSquingScore.blinkLeft-eyeBlinkSquingScore.blinkRight);
+            eye43-=absdiff*1.5;
+            absdiff/=2;
+            
+            if(eyeBlinkSquingScore.blinkLeft>eyeBlinkSquingScore.blinkRight)
+            {
+                eyeBlinkSquingScore.blinkLeft+=absdiff;
+                eyeBlinkSquingScore.blinkRight-=absdiff;
+            }
+            else
+            {
+                eyeBlinkSquingScore.blinkLeft-=absdiff;
+                eyeBlinkSquingScore.blinkRight+=absdiff;
+            }
+            
+            face.morphTargetInfluences[face.morphTargetDictionary['AU_46_L']]=eyeBlinkSquingScore.blinkLeft;
+            face.morphTargetInfluences[face.morphTargetDictionary['AU_46_R']]=eyeBlinkSquingScore.blinkRight;
+            face.morphTargetInfluences[face.morphTargetDictionary['AU_43']]=eye43;
         }
     }
     // Render the 3D scene
