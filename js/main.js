@@ -76,8 +76,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 container.appendChild( renderer.domElement );
 
 // Set up the Three.js camera
-const camera = new THREE.PerspectiveCamera( 60, container.clientWidth / container.clientHeight, 1, 100 );
-camera.position.z = 5;
+const camera = new THREE.PerspectiveCamera( 60, container.clientWidth / container.clientHeight, 0.1, 100 );
 const scene = new THREE.Scene();
 scene.scale.x = - 1;
 const environment = new RoomEnvironment();
@@ -85,6 +84,8 @@ const pmremGenerator = new THREE.PMREMGenerator( renderer );
 scene.background = new THREE.Color( 0x666666 );
 scene.environment = pmremGenerator.fromScene( environment ).texture;
 const controls = new OrbitControls( camera, renderer.domElement );
+scene.add(new THREE.AmbientLight());
+scene.add(new THREE.DirectionalLight());
 const transform = new THREE.Object3D();
 
 
@@ -106,14 +107,14 @@ new GLTFLoader()
         //eyeL = mesh.getObjectByName( 'eyeLeft' );
         //eyeR = mesh.getObjectByName( 'eyeRight' );
         //teeth = mesh.getObjectByName( 'mesh_3' );
-        //const gui = new GUI();
-        //gui.close();
-        //const influences = head.morphTargetInfluences;
-        //for ( const [ key, value ] of Object.entries( head.morphTargetDictionary ) ) {
-        //    gui.add( influences, value, 0, 1, 0.01 )
-        //        .name( key.replace( 'blendShape1.', '' ) )
-        //        .listen( influences );
-        //}
+        const gui = new GUI();
+        gui.close();
+        const influences = face.morphTargetInfluences;
+        for ( const [ key, value ] of Object.entries( face.morphTargetDictionary ) ) {
+            gui.add( influences, value, 0, 1, 0.01 )
+                .name( key.replace( 'blendShape1.', '' ) )
+                .listen( influences );
+        }
 
     } );
 
@@ -200,16 +201,16 @@ let results = undefined;
 const drawingUtils = new DrawingUtils(canvasCtx);
 
 function setWebCam(){
-    const radio = video.videoHeight / video.videoWidth;
+    const ratio = video.videoHeight / video.videoWidth;
     video.style.width = videoWidth + "px";
-    video.style.height = videoWidth * radio + "px";
+    video.style.height = videoWidth * ratio + "px";
     canvasElement.style.width = videoWidth + "px";
-    canvasElement.style.height = videoWidth * radio + "px";
+    canvasElement.style.height = videoWidth * ratio + "px";
     canvasElement.width = video.videoWidth;
     canvasElement.height = video.videoHeight;
 
     renderer.domElement.style.width = videoWidth + "px";
-    renderer.domElement.style.height = videoWidth * radio + "px";
+    renderer.domElement.style.height = videoWidth * ratio + "px";
     renderer.domElement.width = video.videoWidth;
     renderer.domElement.height = video.videoHeight;
     camera.aspect = renderer.domElement.clientWidth/renderer.domElement.clientHeight;
@@ -250,9 +251,8 @@ async function predictWebcam() {
     }
     // If we have blendshapes, print them on the screen and draw the 3D scene
     if (results.faceBlendshapes.length > 0) {
-        const blendShapeCategories = results.faceBlendshapes[0].categories;
         //printBlendShapes(column1, blendShapeCategories);
-        draw3dScene(results,blendShapeCategories)
+        draw3dScene(results)
     }
 
     // If the webcam is still enabled, call this function again for the next frame
@@ -279,11 +279,22 @@ function printBlendShapes(el, blendShapes) {
     el.innerHTML = htmlMaker;
   }
 // Draw the 3D scene with the face landmarks and blendshapes
-function draw3dScene(results, faceBlendshapes) {
+function draw3dScene(results) {
     if ( video.readyState >= HTMLMediaElement.HAVE_METADATA ) {
         //if(videoTexture) {
         //    videoTexture.needsUpdate = true;
         //}
+
+        if(results.faceBlendshapes.length > 0 ){
+            for ( const blendshape of results.faceBlendshapes[0].categories) {
+                const index = face.morphTargetDictionary[blendshape.categoryName];
+                if (index !== undefined) {
+                    face.morphTargetInfluences[index] = blendshape.score;
+                }else{
+                    console.warn(`Blend shape not defined for ${blendshape.categoryName}`);
+                }
+            }
+        }
 
         if ( results.facialTransformationMatrixes.length > 0 ) {
             const facialTransformationMatrixes = results.facialTransformationMatrixes[ 0 ].data;
@@ -293,16 +304,6 @@ function draw3dScene(results, faceBlendshapes) {
             mesh.rotation.copy(transform.rotation);
         }
 
-        if(results.faceBlendshapes.length > 0 ){
-            for ( const blendshape of faceBlendshapes ) {
-                const index = face.morphTargetDictionary[blendshape.categoryName];
-                if (index !== undefined) {
-                    face.morphTargetInfluences[index] = blendshape.score;
-                }else{
-                    console.warn(`Blend shape not defined for ${blendshape.categoryName}`);
-                }
-            }
-        }
         /*
         if ( results.faceBlendshapes.length > 0 ) {
             // Tracks eye movement
