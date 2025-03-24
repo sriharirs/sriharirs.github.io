@@ -100,9 +100,9 @@ new GLTFLoader()
     .setMeshoptDecoder( MeshoptDecoder )
     .load( 'models/head.glb', ( gltf ) => {
         mesh = gltf.scene.children[ 0 ];
-        mesh.scale.setScalar(5);
+        mesh.scale.setScalar(15);
         scene.add(mesh);
-        face = mesh.getObjectByName( 'CC_Base_Body_1' );
+        face = mesh.getObjectByName( 'head_geo002' );
         //eyeL = mesh.getObjectByName( 'eyeLeft' );
         //eyeR = mesh.getObjectByName( 'eyeRight' );
         //teeth = mesh.getObjectByName( 'mesh_3' );
@@ -295,25 +295,9 @@ function draw3dScene(results, faceBlendshapes) {
 
         if(results.faceBlendshapes.length > 0 ){
             for ( const blendshape of faceBlendshapes ) {
-                const value = blendshapesMap[blendshape.categoryName];
-                if (value !== undefined) {
-                    if (Array.isArray(value)) {
-                        value.forEach(item => {
-                            const index = face.morphTargetDictionary[item];
-                            if (index !== undefined) {
-                                face.morphTargetInfluences[index] = blendshape.score;
-                            }else{
-                                console.warn(`Blend shape not defined for ${blendshape.categoryName}`);
-                            }
-                        });
-                    } else {
-                        const index = face.morphTargetDictionary[value];
-                        if (index !== undefined) {
-                            face.morphTargetInfluences[index] = blendshape.score;
-                        }else{
-                            console.warn(`Blend shape not defined for ${blendshape.categoryName}`);
-                        }
-                    }
+                const index = face.morphTargetDictionary[blendshape.categoryName];
+                if (index !== undefined) {
+                    face.morphTargetInfluences[index] = blendshape.score;
                 }else{
                     console.warn(`Blend shape not defined for ${blendshape.categoryName}`);
                 }
