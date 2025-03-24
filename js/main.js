@@ -76,7 +76,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 container.appendChild( renderer.domElement );
 
 // Set up the Three.js camera
-const camera = new THREE.PerspectiveCamera( 60, container.clientWidth / container.clientHeight, 0.1, 100 );
+const camera = new THREE.PerspectiveCamera( 60, container.clientWidth / container.clientHeight, 0.01, 100 );
 const scene = new THREE.Scene();
 scene.scale.x = - 1;
 const environment = new RoomEnvironment();
@@ -101,8 +101,8 @@ new GLTFLoader()
     .setMeshoptDecoder( MeshoptDecoder )
     .load( 'models/head.glb', ( gltf ) => {
         mesh = gltf.scene.children[ 0 ];
-        mesh.scale.setScalar(15);
         scene.add(mesh);
+        mesh.scale.setScalar(15);
         face = mesh.getObjectByName( 'head_geo002' );
         //eyeL = mesh.getObjectByName( 'eyeLeft' );
         //eyeR = mesh.getObjectByName( 'eyeRight' );
