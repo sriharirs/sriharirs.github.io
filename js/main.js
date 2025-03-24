@@ -11,29 +11,58 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 // Map blendshapes from MediaPipe to AU (Action Units) present in the 3D model
 const blendshapesMap = {
-    'browInnerUp': 'AU_1',
-    'browOuterUpLeft': 'AU_2',
-    'browOuterUpRight': 'AU_2',
-    'browDownLeft': 'AU_4',
-    'browDownRight': 'AU_4',
-    'eyeWideLeft': 'AU_5',
-    'eyeWideRight': 'AU_5',
-    //'eyeSquintLeft': 'AU_46_L',
-    //'eyeSquintRight': 'AU_46_R',
-    'noseSneerLeft': 'AU_9',
-    'noseSneerRight': 'AU_9',
-    'mouthSmileLeft': 'AU_12',
-    'mouthSmileRight': 'AU_12',
-    'mouthFrownLeft': 'AU_15',
-    'mouthFrownRight': 'AU_15',
-    'mouthPucker': 'AU_18',
-    'mouthStretchLeft': 'AU_20',
-    'mouthStretchRight': 'AU_20',
-    'mouthPressLeft': 'AU_23',
-    'mouthPressRight': 'AU_23',
-    'jawOpen': 'AU_26',
-    //'eyeBlinkLeft': 'AU_46_L',
-    //'eyeBlinkRight': 'AU_46_R'
+    'browDownLeft':'Brow_Drop_L',
+    'browDownRight':'Brow_Drop_R',
+    'browInnerUp':['Brow_Raise_Inner_L','Brow_Raise_Inner_R'],
+    'browOuterUpLeft':'Brow_Raise_Outer_L',
+    'browOuterUpRight':'Brow_Raise_Outer_R',
+    'cheekPuff':['Cheek_Puff_L','Cheek_Puff_R'],
+    'cheekSquintLeft':'Cheek_Raise_L',
+    'cheekSquintRight':'Cheek_Raise_R',
+    'eyeBlinkLeft':'Eye_Blink_L',
+    'eyeBlinkRight':'Eye_Blink_R',
+    'eyeLookDownLeft':'Eye_L_Look_Down',
+    'eyeLookDownRight':'Eye_R_Look_Down',
+    'eyeLookInLeft':'Eye_L_Look_R',
+    'eyeLookInRight':'Eye_R_Look_L',
+    'eyeLookOutLeft':'Eye_L_Look_L',
+    'eyeLookOutRight':'Eye_R_Look_R',
+    'eyeLookUpLeft':'Eye_L_Look_Up',
+    'eyeLookUpRight':'Eye_R_Look_Up',
+    'eyeSquintLeft':'Eye_Squint_L',
+    'eyeSquintRight':'Eye_Squint_R',
+    'eyeWideLeft':'Eye_Wide_L',
+    'eyeWideRight':'Eye_Wide_R',
+    'jawForward':'Jaw_Forward',
+    'jawLeft':'Jaw_L',
+    'jawOpen':'Jaw_Open',
+    'jawRight':'Jaw_R',
+    'mouthClose':'Mouth_Close',
+    'mouthDimpleLeft':'Mouth_Dimple_L',
+    'mouthDimpleRight':'Mouth_Dimple_R',
+    'mouthFrownLeft':'Mouth_Frown_L',
+    'mouthFrownRight':'Mouth_Frown_R',
+    'mouthFunnel':['Mouth_Funnel_Up_L','Mouth_Funnel_Up_R'],
+    'mouthLeft':'Mouth_L',
+    'mouthLowerDownLeft':'Mouth_Down_Lower_L',
+    'mouthLowerDownRight':'Mouth_Down_Lower_R',
+    'mouthPressLeft':'Mouth_Press_L',
+    'mouthPressRight':'Mouth_Press_R',
+    'mouthPucker':['Mouth_Pucker_Up_L','Mouth_Pucker_Up_R','Mouth_Pucker_Down_R','Mouth_Pucker_Down_L'],
+    'mouthRight':'Mouth_R',
+    'mouthRollLower':['Mouth_Roll_In_Lower_L','Mouth_Roll_In_Lower_R'],
+    'mouthRollUpper':['Mouth_Roll_In_Upper_L','Mouth_Roll_In_Upper_R'],
+    'mouthShrugLower':'Mouth_Shrug_Lower',
+    'mouthShrugUpper':'Mouth_Shrug_Upper',
+    'mouthSmileLeft':'Mouth_Smile_L',
+    'mouthSmileRight':'Mouth_Smile_R',
+    'mouthStretchLeft':'Mouth_Stretch_L',
+    'mouthStretchRight':'Mouth_Stretch_R',
+    'mouthUpperUpLeft':'Mouth_Up_Upper_L',
+    'mouthUpperUpRight':'Mouth_Up_Upper_R',
+    'noseSneerLeft':'Nose_Sneer_L',
+    'noseSneerRight':'Nose_Sneer_R',
+    'tongueOut' :'Tongue_Out',
 };
 
 // Three.js preparation
@@ -60,7 +89,7 @@ const transform = new THREE.Object3D();
 
 
 // Load the 3D model and find the face, eyes and teeth meshes
-let face, eyeL, eyeR, teeth;
+let mesh,face, eyeL, eyeR, teeth;
 const eyeRotationLimitHorizontal = THREE.MathUtils.degToRad( 30 );
 const eyeRotationLimitVertical = THREE.MathUtils.degToRad( 30 );
 const ktx2Loader = new KTX2Loader()
@@ -69,22 +98,23 @@ const ktx2Loader = new KTX2Loader()
 new GLTFLoader()
     .setKTX2Loader( ktx2Loader )
     .setMeshoptDecoder( MeshoptDecoder )
-    .load( 'models/head.gltf', ( gltf ) => {
-        const mesh = gltf.scene.children[ 0 ];
-        scene.add( mesh );
-        const head = mesh.getObjectByName( 'mesh_2' );
-        face = mesh.getObjectByName( 'mesh_2' );
-        eyeL = mesh.getObjectByName( 'eyeLeft' );
-        eyeR = mesh.getObjectByName( 'eyeRight' );
-        teeth = mesh.getObjectByName( 'mesh_3' );
-        const gui = new GUI();
-        gui.close();
-        const influences = head.morphTargetInfluences;
-        for ( const [ key, value ] of Object.entries( head.morphTargetDictionary ) ) {
-            gui.add( influences, value, 0, 1, 0.01 )
-                .name( key.replace( 'blendShape1.', '' ) )
-                .listen( influences );
-        }
+    .load( 'models/head.glb', ( gltf ) => {
+        mesh = gltf.scene.children[ 0 ];
+        mesh.scale.setScalar(5);
+        scene.add(mesh);
+        face = mesh.getObjectByName( 'CC_Base_Body_1' );
+        //eyeL = mesh.getObjectByName( 'eyeLeft' );
+        //eyeR = mesh.getObjectByName( 'eyeRight' );
+        //teeth = mesh.getObjectByName( 'mesh_3' );
+        //const gui = new GUI();
+        //gui.close();
+        //const influences = head.morphTargetInfluences;
+        //for ( const [ key, value ] of Object.entries( head.morphTargetDictionary ) ) {
+        //    gui.add( influences, value, 0, 1, 0.01 )
+        //        .name( key.replace( 'blendShape1.', '' ) )
+        //        .listen( influences );
+        //}
+
     } );
 
 // Find html elements for displaying the blendshapes
@@ -118,14 +148,14 @@ const video = document.getElementById("webcam");
 const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
 
-const videoTexture = new THREE.VideoTexture(video);
-videoTexture.minFilter = THREE.LinearFilter;
-videoTexture.maxFilter = THREE.LinearFilter;
-videoTexture.format = THREE.RGBFormat;
-videoTexture.wrapS = THREE.RepeatWrapping;
-videoTexture.repeat.x = -1;
-videoTexture.colorSpace = THREE.SRGBColorSpace;
-scene.background=videoTexture;
+//const videoTexture = new THREE.VideoTexture(video);
+//videoTexture.minFilter = THREE.LinearFilter;
+//videoTexture.maxFilter = THREE.LinearFilter;
+//videoTexture.format = THREE.RGBFormat;
+//videoTexture.wrapS = THREE.RepeatWrapping;
+//videoTexture.repeat.x = -1;
+//videoTexture.colorSpace = THREE.SRGBColorSpace;
+////scene.background=videoTexture;
 
 // Check if webcam access is supported.
 function hasGetUserMedia() {
@@ -162,15 +192,14 @@ function enableCam(event) {
     // Activate the webcam stream
     navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
         video.srcObject = stream;
-        video.addEventListener("loadeddata", predictWebcam);
+        video.addEventListener("loadeddata", setWebCam);
     });
 }
 let lastVideoTime = -1;
 let results = undefined;
 const drawingUtils = new DrawingUtils(canvasCtx);
 
-// This is called for every frame, it processes the video stream and detects the face landmarks
-async function predictWebcam() {
+function setWebCam(){
     const radio = video.videoHeight / video.videoWidth;
     video.style.width = videoWidth + "px";
     video.style.height = videoWidth * radio + "px";
@@ -178,6 +207,22 @@ async function predictWebcam() {
     canvasElement.style.height = videoWidth * radio + "px";
     canvasElement.width = video.videoWidth;
     canvasElement.height = video.videoHeight;
+
+    renderer.domElement.style.width = videoWidth + "px";
+    renderer.domElement.style.height = videoWidth * radio + "px";
+    renderer.domElement.width = video.videoWidth;
+    renderer.domElement.height = video.videoHeight;
+    camera.aspect = renderer.domElement.clientWidth/renderer.domElement.clientHeight;
+
+    predictWebcam();
+}
+
+// This is called for every frame, it processes the video stream and detects the face landmarks
+async function predictWebcam() {
+
+    canvasElement.width = video.videoWidth;
+    canvasElement.height = video.videoHeight;
+
     // Now let's start detecting the stream
     if (runningMode === "IMAGE") {
         runningMode = "VIDEO";
@@ -187,7 +232,7 @@ async function predictWebcam() {
     if (lastVideoTime !== video.currentTime) {
         lastVideoTime = video.currentTime;
         results = faceLandmarker.detectForVideo(video, nowInMs);
-        console.log(video.srcObject);
+        //console.log(video.srcObject);
     }
     if (results.faceLandmarks) {
         // If we have landmarks, draw them on the user's face
@@ -206,7 +251,7 @@ async function predictWebcam() {
     // If we have blendshapes, print them on the screen and draw the 3D scene
     if (results.faceBlendshapes.length > 0) {
         const blendShapeCategories = results.faceBlendshapes[0].categories;
-        printBlendShapes(column1, blendShapeCategories);
+        //printBlendShapes(column1, blendShapeCategories);
         draw3dScene(results,blendShapeCategories)
     }
 
@@ -236,29 +281,45 @@ function printBlendShapes(el, blendShapes) {
 // Draw the 3D scene with the face landmarks and blendshapes
 function draw3dScene(results, faceBlendshapes) {
     if ( video.readyState >= HTMLMediaElement.HAVE_METADATA ) {
-        if(videoTexture) {
-            videoTexture.needsUpdate = true;
-        }
+        //if(videoTexture) {
+        //    videoTexture.needsUpdate = true;
+        //}
 
         if ( results.facialTransformationMatrixes.length > 0 ) {
             const facialTransformationMatrixes = results.facialTransformationMatrixes[ 0 ].data;
             transform.matrix.fromArray( facialTransformationMatrixes );
             transform.matrix.decompose( transform.position, transform.quaternion, transform.scale );
-            const object = scene.getObjectByName( 'grp_transform' );
-            //object.position.copy( transform.position );
-            object.position.x = transform.position.x/2 - 5 * Math.sin(transform.rotation.y);
-            object.position.y = transform.position.y/2 + 5 * Math.sin(transform.rotation.x) - 2;
-            object.position.z = transform.position.z/2;
-
-            object.scale.x = transform.scale.x*3;
-            object.scale.y = transform.scale.y*3;
-            object.scale.z = transform.scale.z*3;
-
-            // Update the 3D model to rotate the head
-            object.rotation.x = transform.rotation.x;
-            object.rotation.y = transform.rotation.y;
-            object.rotation.z = transform.rotation.z;
+            mesh.position.copy( transform.position );
+            mesh.rotation.copy(transform.rotation);
         }
+
+        if(results.faceBlendshapes.length > 0 ){
+            for ( const blendshape of faceBlendshapes ) {
+                const value = blendshapesMap[blendshape.categoryName];
+                if (value !== undefined) {
+                    if (Array.isArray(value)) {
+                        value.forEach(item => {
+                            const index = face.morphTargetDictionary[item];
+                            if (index !== undefined) {
+                                face.morphTargetInfluences[index] = blendshape.score;
+                            }else{
+                                console.warn(`Blend shape not defined for ${blendshape.categoryName}`);
+                            }
+                        });
+                    } else {
+                        const index = face.morphTargetDictionary[value];
+                        if (index !== undefined) {
+                            face.morphTargetInfluences[index] = blendshape.score;
+                        }else{
+                            console.warn(`Blend shape not defined for ${blendshape.categoryName}`);
+                        }
+                    }
+                }else{
+                    console.warn(`Blend shape not defined for ${blendshape.categoryName}`);
+                }
+            }
+        }
+        /*
         if ( results.faceBlendshapes.length > 0 ) {
             // Tracks eye movement
             const eyeScore = {
@@ -353,6 +414,7 @@ function draw3dScene(results, faceBlendshapes) {
             face.morphTargetInfluences[face.morphTargetDictionary['AU_46_R']]=eyeBlinkSquingScore.blinkRight;
             face.morphTargetInfluences[face.morphTargetDictionary['AU_43']]=eye43;
         }
+        */
     }
     // Render the 3D scene
     renderer.render( scene, camera );
