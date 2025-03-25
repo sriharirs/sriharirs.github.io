@@ -3,12 +3,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 // Map blendshapes from MediaPipe to AU (Action Units) present in the 3D model
-const blendshapesMap = {
+const blendshapesMap: Record<string, string[] | string> = {
     'browDownLeft': 'Brow_Drop_L',
     'browDownRight': 'Brow_Drop_R',
     'browInnerUp': ['Brow_Raise_Inner_L', 'Brow_Raise_Inner_R'],
@@ -89,12 +87,7 @@ const transform = new THREE.Object3D();
 let mesh: THREE.Object3D, face: THREE.Mesh, eyeL, eyeR, teeth;
 const eyeRotationLimitHorizontal = THREE.MathUtils.degToRad(30);
 const eyeRotationLimitVertical = THREE.MathUtils.degToRad(30);
-const ktx2Loader = new KTX2Loader()
-    .setTranscoderPath('three/addons/jsm/libs/basis/')
-    .detectSupport(renderer);
 new GLTFLoader()
-    .setKTX2Loader(ktx2Loader)
-    .setMeshoptDecoder(MeshoptDecoder)
     .load('models/head.glb', (gltf) => {
         mesh = gltf.scene.children[0];
         scene.add(mesh);
@@ -103,14 +96,14 @@ new GLTFLoader()
         //eyeL = mesh.getObjectByName( 'eyeLeft' );
         //eyeR = mesh.getObjectByName( 'eyeRight' );
         //teeth = mesh.getObjectByName( 'mesh_3' );
-        const gui = new GUI();
-        gui.close();
-        const influences = face.morphTargetInfluences ?? [];
-        for (const [key, value] of Object.entries(face.morphTargetDictionary ?? {})) {
-            gui.add(influences, value, 0, 1, 0.01)
-                .name(key.replace('blendShape1.', ''))
-                .listen(true);
-        }
+        //const gui = new GUI();
+        //gui.close();
+        //const influences = face.morphTargetInfluences ?? [];
+        //for (const [key, value] of Object.entries(face.morphTargetDictionary ?? {})) {
+        //    gui.add(influences, value, 0, 1, 0.01)
+        //        .name(key.replace('blendShape1.', ''))
+        //        .listen(true);
+        //}
 
     });
 
@@ -124,7 +117,7 @@ const videoWidth = 480;
 
 // Preload assets from CDN
 async function preLoadAssets() {
-    const filesetResolver = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm");
+    const filesetResolver = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm");
     faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
         baseOptions: {
             modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
@@ -240,7 +233,7 @@ async function predictWebcam() {
     // If we have blendshapes, print them on the screen and draw the 3D scene
     if (results.faceBlendshapes.length > 0) {
         //printBlendShapes(column1, results.faceBlendshapes);
-        draw3dScene(results)
+        draw3dScene(results);
     }
 
     // If the webcam is still enabled, call this function again for the next frame
@@ -276,10 +269,15 @@ function draw3dScene(results: FaceLandmarkerResult) {
         if (results.faceBlendshapes.length > 0) {
             for (const blendshape of results.faceBlendshapes[0].categories) {
                 const index = face.morphTargetDictionary?.[blendshape.categoryName];
-                if (index !== undefined && face.morphTargetInfluences !== undefined) {
-                    face.morphTargetInfluences[index] = blendshape.score;
-                } else {
-                    console.warn(`Blend shape not defined for ${blendshape.categoryName}`);
+                if (index !== undefined) {
+                    if (face.morphTargetInfluences !== undefined) {
+                        face.morphTargetInfluences[index] = blendshape.score;
+                    } else if (blendshape.categoryName !== '_neutral') {
+                        console.warn(`Blend shape not defined for ${blendshape.categoryName}`);
+                    }
+                    else {
+                        console.warn(`something is wrong`);
+                    }
                 }
             }
         }
