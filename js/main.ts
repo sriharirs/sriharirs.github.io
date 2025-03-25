@@ -85,7 +85,7 @@ const transform = new THREE.Object3D();
 
 
 // Load the 3D model and find the face, eyes and teeth meshes
-let mesh: THREE.Object3D, face: THREE.Mesh, eyeL, eyeR, teeth;
+let mesh: THREE.Object3D, faceArray: THREE.Mesh[] = new Array(3), eyeL, eyeR, teeth;
 const eyeRotationLimitHorizontal = THREE.MathUtils.degToRad(30);
 const eyeRotationLimitVertical = THREE.MathUtils.degToRad(30);
 new GLTFLoader()
@@ -94,19 +94,21 @@ new GLTFLoader()
         console.log(mesh);
         scene.add(mesh);
         mesh.scale.setScalar(3);
-        face = mesh.getObjectByName('CC_Base_Body001_1') as THREE.Mesh;
+        faceArray[0] = mesh.getObjectByName('CC_Base_Body001_1') as THREE.Mesh;
+        faceArray[1] = mesh.getObjectByName('CC_Base_Body001_2') as THREE.Mesh;
+        faceArray[2] = mesh.getObjectByName('CC_Base_Body001_3') as THREE.Mesh;
         //eyeL = mesh.getObjectByName( 'eyeLeft' );
         //eyeR = mesh.getObjectByName( 'eyeRight' );
         //teeth = mesh.getObjectByName( 'mesh_3' );
         const gui = new GUI({ width: 500 });
         gui.close();
-        const influences = face.morphTargetInfluences!;
-        for (let [key, value] of Object.entries(face.morphTargetDictionary!)) {
+        const influences = faceArray[0].morphTargetInfluences!;
+        for (let [key, value] of Object.entries(faceArray[0].morphTargetDictionary!)) {
             gui.add(influences, value, 0, 1, 0.01)
                 .name(key.replace('blendShape1.', ''))
                 .listen(true)
                 .onChange((userValue) => {
-                    face.morphTargetDictionary![key] = userValue;
+                    faceArray[0].morphTargetDictionary![key] = userValue;
                 });
         }
 
@@ -114,6 +116,7 @@ new GLTFLoader()
 
 // Find html elements for displaying the blendshapes
 const demosSection = document.getElementById("demos")!;
+const column1 = document.getElementById("video-blend-shapes-column1");
 let faceLandmarker: FaceLandmarker;
 let enableWebcamButton: HTMLElement;
 let webcamRunning = false;
@@ -237,7 +240,7 @@ async function predictWebcam() {
     }
     // If we have blendshapes, print them on the screen and draw the 3D scene
     if (results.faceBlendshapes.length > 0) {
-        //printBlendShapes(column1, results.faceBlendshapes);
+        printBlendShapes(column1!, results.faceBlendshapes[0].categories);
         draw3dScene(results);
     }
 
@@ -280,11 +283,22 @@ function draw3dScene(results: FaceLandmarkerResult) {
 
         if (results.faceBlendshapes.length > 0) {
             for (const blendshape of results.faceBlendshapes[0].categories) {
-                const value = blendshapesMap[blendshape.categoryName];
-                if (value !== undefined) {
-                    if (Array.isArray(value)) {
-                        value.forEach(item => {
-                            const index = face.morphTargetDictionary?.[item];
+                for (const face of faceArray) {
+                    const value = blendshapesMap[blendshape.categoryName];
+                    if (value !== undefined) {
+                        if (Array.isArray(value)) {
+                            value.forEach(item => {
+                                const index = face.morphTargetDictionary?.[item];
+                                if (index !== undefined) {
+                                    if (face.morphTargetInfluences) {
+                                        face.morphTargetInfluences[index] = blendshape.score;
+                                    }
+                                } else {
+                                    console.warn(`Blend shape not defined for ${blendshape.categoryName}`);
+                                }
+                            });
+                        } else {
+                            const index = face.morphTargetDictionary?.[value];
                             if (index !== undefined) {
                                 if (face.morphTargetInfluences) {
                                     face.morphTargetInfluences[index] = blendshape.score;
@@ -292,15 +306,6 @@ function draw3dScene(results: FaceLandmarkerResult) {
                             } else {
                                 console.warn(`Blend shape not defined for ${blendshape.categoryName}`);
                             }
-                        });
-                    } else {
-                        const index = face.morphTargetDictionary?.[value];
-                        if (index !== undefined) {
-                            if (face.morphTargetInfluences) {
-                                face.morphTargetInfluences[index] = blendshape.score;
-                            }
-                        } else {
-                            console.warn(`Blend shape not defined for ${blendshape.categoryName}`);
                         }
                     }
                 }
