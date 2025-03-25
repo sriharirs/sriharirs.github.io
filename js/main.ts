@@ -31,9 +31,9 @@ const blendshapesMap: Record<string, string[] | string> = {
     'eyeWideRight': 'Eye_Wide_R',
     'jawForward': 'Jaw_Forward',
     'jawLeft': 'Jaw_L',
-    'jawOpen': 'Jaw_Open',
+    'jawOpen': 'Jaw_open_close',
     'jawRight': 'Jaw_R',
-    'mouthClose': 'Mouth_Close',
+    'mouthClose': 'Mouth_open_close',
     'mouthDimpleLeft': 'Mouth_Dimple_L',
     'mouthDimpleRight': 'Mouth_Dimple_R',
     'mouthFrownLeft': 'Mouth_Frown_L',
@@ -78,6 +78,7 @@ const pmremGenerator = new THREE.PMREMGenerator(renderer);
 scene.background = new THREE.Color(0x666666);
 scene.environment = pmremGenerator.fromScene(environment).texture;
 const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.setZ(-0.1);
 scene.add(new THREE.AmbientLight());
 scene.add(new THREE.DirectionalLight());
 const transform = new THREE.Object3D();
@@ -90,26 +91,29 @@ const eyeRotationLimitVertical = THREE.MathUtils.degToRad(30);
 new GLTFLoader()
     .load('models/head.glb', (gltf) => {
         mesh = gltf.scene.children[0];
+        console.log(mesh);
         scene.add(mesh);
-        mesh.scale.setScalar(2);
-        face = mesh.getObjectByName('CC_Base_Body_1') as THREE.Mesh;
+        mesh.scale.setScalar(3);
+        face = mesh.getObjectByName('CC_Base_Body001_1') as THREE.Mesh;
         //eyeL = mesh.getObjectByName( 'eyeLeft' );
         //eyeR = mesh.getObjectByName( 'eyeRight' );
         //teeth = mesh.getObjectByName( 'mesh_3' );
-        //const gui = new GUI();
-        //gui.close();
-        //const influences = face.morphTargetInfluences ?? [];
-        //for (const [key, value] of Object.entries(face.morphTargetDictionary ?? {})) {
-        //    gui.add(influences, value, 0, 1, 0.01)
-        //        .name(key.replace('blendShape1.', ''))
-        //        .listen(true);
-        //}
+        const gui = new GUI({ width: 500 });
+        gui.close();
+        const influences = face.morphTargetInfluences!;
+        for (let [key, value] of Object.entries(face.morphTargetDictionary!)) {
+            gui.add(influences, value, 0, 1, 0.01)
+                .name(key.replace('blendShape1.', ''))
+                .listen(true)
+                .onChange((userValue) => {
+                    face.morphTargetDictionary![key] = userValue;
+                });
+        }
 
     });
 
 // Find html elements for displaying the blendshapes
 const demosSection = document.getElementById("demos")!;
-const column1 = document.getElementById("video-blend-shapes-column1");
 let faceLandmarker: FaceLandmarker;
 let enableWebcamButton: HTMLElement;
 let webcamRunning = false;
@@ -206,6 +210,7 @@ function setWebCam() {
     predictWebcam();
 }
 
+let x: number;
 // This is called for every frame, it processes the video stream and detects the face landmarks
 async function predictWebcam() {
 
@@ -239,10 +244,17 @@ async function predictWebcam() {
     // If the webcam is still enabled, call this function again for the next frame
     if (webcamRunning === true) {
         window.requestAnimationFrame(predictWebcam);
+        window.cancelAnimationFrame(x);
+    } else {
+        x = window.requestAnimationFrame(render);
     }
-
 }
 
+function render() {
+    renderer.render(scene, camera);
+    controls.update();
+    window.requestAnimationFrame(render);
+}
 // Print the blendshapes on the screen (the numbers visible next to video and 3D scene)
 function printBlendShapes(el: HTMLElement, blendShapes: Category[]) {
     if (!blendShapes.length) {
