@@ -65,8 +65,6 @@ const blendshapesMap: Record<string, string[]> = {
 var container = document.getElementById('3dscene')!;
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(window.devicePixelRatio);
-renderer.setSize(container.clientWidth, container.clientHeight);
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
 container.appendChild(renderer.domElement);
 
 // Set up the Three.js camera
@@ -82,7 +80,7 @@ controls.target.setZ(-0.1);
 scene.add(new THREE.AmbientLight());
 scene.add(new THREE.DirectionalLight());
 
-let mesh: THREE.Object3D, faceArray: THREE.Mesh[] = new Array(3);
+let mesh: THREE.Object3D, faceArray: THREE.Mesh[] = new Array();
 
 const demosSection = document.getElementById("demos")!;
 const column1 = document.getElementById("video-blend-shapes-column1")!;
@@ -186,13 +184,21 @@ function setWebCam() {
 
     renderer.domElement.style.width = videoWidth + "px";
     renderer.domElement.style.height = videoWidth * ratio + "px";
-    renderer.domElement.width = video.videoWidth;
-    renderer.domElement.height = video.videoHeight;
+    renderer.setSize(videoWidth, videoWidth * ratio);
     camera.aspect = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
+    camera.updateProjectionMatrix();
 
     predictWebcam();
 }
 
+window.addEventListener("resize", onWindowResize);
+
+function onWindowResize() {
+    const ratio = video.videoHeight / video.videoWidth;
+    renderer.setSize(videoWidth, videoWidth * ratio);
+    camera.aspect = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
+    camera.updateProjectionMatrix();
+}
 // This is called for every frame, it processes the video stream and detects the face landmarks
 async function predictWebcam() {
 
