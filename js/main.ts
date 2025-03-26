@@ -81,7 +81,6 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.setZ(-0.1);
 scene.add(new THREE.AmbientLight());
 scene.add(new THREE.DirectionalLight());
-const transform = new THREE.Object3D();
 
 let mesh: THREE.Object3D, faceArray: THREE.Mesh[] = new Array(3);
 
@@ -112,7 +111,7 @@ async function preLoadAssets() {
     let gltf = result[0];
     mesh = gltf.scene.children[0];
     scene.add(mesh);
-    mesh.scale.setScalar(3);
+    mesh.matrixAutoUpdate = false;
     faceArray[0] = mesh.getObjectByName('CC_Base_Body001_1') as THREE.Mesh;
     faceArray[1] = mesh.getObjectByName('CC_Base_Body001_2') as THREE.Mesh;
     faceArray[2] = mesh.getObjectByName('CC_Base_Body001_3') as THREE.Mesh;
@@ -243,11 +242,10 @@ function draw3dScene(results: FaceLandmarkerResult) {
         }
 
         if (results.facialTransformationMatrixes.length > 0) {
-            const facialTransformationMatrixes = results.facialTransformationMatrixes[0].data;
-            transform.matrix.fromArray(facialTransformationMatrixes);
-            transform.matrix.decompose(transform.position, transform.quaternion, transform.scale);
-            mesh.position.copy(transform.position);
-            mesh.rotation.copy(transform.rotation);
+            let matrix = new THREE.Matrix4().fromArray(results.facialTransformationMatrixes[0].data);
+            matrix.scale(new THREE.Vector3(5, 5, 5));
+            // Set new position and rotation from matrix
+            mesh.matrix.copy(matrix);
         }
     }
     // Render the 3D scene
