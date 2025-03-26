@@ -76,7 +76,10 @@ const pmremGenerator = new THREE.PMREMGenerator(renderer);
 scene.background = new THREE.Color(0x666666);
 scene.environment = pmremGenerator.fromScene(environment).texture;
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.setZ(-0.1);
+let orbitTarget = camera.position.clone();
+orbitTarget.z -= 5;
+controls.target = orbitTarget;
+controls.update();
 scene.add(new THREE.AmbientLight());
 scene.add(new THREE.DirectionalLight());
 
