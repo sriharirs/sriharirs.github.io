@@ -81,11 +81,16 @@ scene.add(new THREE.AmbientLight());
 scene.add(new THREE.DirectionalLight());
 
 let mesh: THREE.Object3D, faceArray: THREE.Mesh[] = new Array();
+let glass: THREE.Object3D;
 
 const demosSection = document.getElementById("demos")!;
 const column1 = document.getElementById("video-blend-shapes-column1")!;
 let faceLandmarker: FaceLandmarker;
 let enableWebcamButton = document.getElementById("webcamButton")!;
+let enableGlass = document.getElementById("glassButton")!;
+enableGlass.addEventListener("click", () => {
+    glass.visible = !glass.visible;
+});
 let webcamRunning = false;
 const videoWidth = 480;
 
@@ -112,10 +117,8 @@ async function preLoadAssets() {
     mesh.matrixAutoUpdate = false;
     faceArray[0] = mesh.getObjectByName('CC_Base_Body001_1') as THREE.Mesh;
     faceArray[1] = mesh.getObjectByName('CC_Base_Body001_2') as THREE.Mesh;
-    faceArray[2] = mesh.getObjectByName('CC_Base_Body001_3') as THREE.Mesh;
-    //eyeL = mesh.getObjectByName( 'eyeLeft' );
-    //eyeR = mesh.getObjectByName( 'eyeRight' );
-    //teeth = mesh.getObjectByName( 'mesh_3' );
+    glass = mesh.getObjectByName('glass')!;
+    glass.visible = false;
     const gui = new GUI({ width: 500 });
     gui.close();
     const influences = faceArray[0].morphTargetInfluences!;
