@@ -143,6 +143,13 @@ const video = document.getElementById("webcam") as HTMLVideoElement;
 const canvasElement = document.getElementById("output_canvas") as HTMLCanvasElement;
 const canvasCtx = canvasElement.getContext("2d")!;
 
+const videoTexture = new THREE.VideoTexture(video);
+videoTexture.format = THREE.RGBFormat;
+videoTexture.wrapS = THREE.RepeatWrapping;
+videoTexture.repeat.x = -1;
+videoTexture.colorSpace = THREE.SRGBColorSpace;
+scene.background = videoTexture;
+
 // If webcam supported, add event listener to button for when user wants to enable it
 if (!!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
     enableWebcamButton.addEventListener("click", enableCam);
