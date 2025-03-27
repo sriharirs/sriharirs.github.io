@@ -62,7 +62,7 @@ const blendshapesMap: Record<string, string[]> = {
 };
 
 // Set up the Three.js scene and attach it to html element with id '3dscene'
-var container = document.getElementById('3dscene')!;
+const container = document.getElementById('3dscene')!;
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(window.devicePixelRatio);
 container.appendChild(renderer.domElement);
@@ -71,15 +71,17 @@ container.appendChild(renderer.domElement);
 const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.01, 100);
 const scene = new THREE.Scene();
 scene.scale.x = - 1;
+
 const environment = new RoomEnvironment();
 const pmremGenerator = new THREE.PMREMGenerator(renderer);
-scene.background = new THREE.Color(0x666666);
 scene.environment = pmremGenerator.fromScene(environment).texture;
+
 const controls = new OrbitControls(camera, renderer.domElement);
 let orbitTarget = camera.position.clone();
 orbitTarget.z -= 5;
 controls.target = orbitTarget;
 controls.update();
+
 scene.add(new THREE.AmbientLight());
 scene.add(new THREE.DirectionalLight());
 
@@ -88,14 +90,50 @@ let glass: THREE.Object3D;
 
 const demosSection = document.getElementById("demos")!;
 const column1 = document.getElementById("video-blend-shapes-column1")!;
+const videoWidth = 480;
 let faceLandmarker: FaceLandmarker;
-let enableWebcamButton = document.getElementById("webcamButton")!;
-let enableGlass = document.getElementById("glassButton")!;
+const enableWebcamButton = document.getElementById("webcamButton")!;
+let webcamRunning = false;
+
+const enableGlass = document.getElementById("glassButton")!;
 enableGlass.addEventListener("click", () => {
+    enableGlass.innerText = `${glass.visible ? "ENABLE" : "DISABLE"} GLASSES`;
     glass.visible = !glass.visible;
 });
-let webcamRunning = false;
-const videoWidth = 480;
+
+const fileInput = document.getElementById("imageUpload") as HTMLInputElement;
+const selectBackground = document.getElementById("background") as HTMLSelectElement;
+const backgroundColor = new THREE.Color(0x666666);
+
+selectBackground.onchange = () => {
+    fileInput.style.visibility = "hidden";
+    switch (selectBackground.selectedIndex) {
+        case 0:
+            scene.background = videoTexture;
+            break;
+        case 1:
+            scene.background = backgroundColor;
+            break;
+        case 2:
+            fileInput.style.visibility = "visible";
+            break;
+    }
+};
+
+fileInput.addEventListener("change", function() {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function() {
+        const textureLoader = new THREE.TextureLoader();
+
+        textureLoader.load(reader.result as string, function(texture) {
+            scene.background = texture;
+        });
+    };
+    reader.readAsDataURL(file);
+});
 
 // Preload assets from CDN
 async function preLoadAssets() {
