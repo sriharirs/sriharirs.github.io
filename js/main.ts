@@ -135,6 +135,12 @@ fileInput.addEventListener("change", function() {
     reader.readAsDataURL(file);
 });
 
+let amplificationValue = 1;
+const range = document.getElementById("myRange") as HTMLInputElement;
+range.oninput = () => {
+    amplificationValue = parseFloat(range.value);
+}
+
 // Preload assets from CDN
 async function preLoadAssets() {
     const filesetResolver = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm");
@@ -292,7 +298,7 @@ function draw3dScene(results: FaceLandmarkerResult) {
                 for (const blendshape of results.faceBlendshapes[0].categories) {
                     const actionUnitsArray = blendshapesMap[blendshape.categoryName];
                     actionUnitsArray?.forEach(actionUnits => {
-                        face.morphTargetInfluences![face.morphTargetDictionary![actionUnits]] = blendshape.score;
+                        face.morphTargetInfluences![face.morphTargetDictionary![actionUnits]] = amplificationValue * blendshape.score;
                     });
                 }
             }
