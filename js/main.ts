@@ -141,6 +141,11 @@ range.oninput = () => {
     amplificationValue = parseFloat(range.value);
 }
 
+const actionUnitsSelect = document.getElementById("actionUnits") as HTMLSelectElement;
+let selectedAction = "";
+actionUnitsSelect.onchange = () => {
+    selectedAction = actionUnitsSelect.value;
+}
 // Preload assets from CDN
 async function preLoadAssets() {
     const filesetResolver = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm");
@@ -170,6 +175,13 @@ async function preLoadAssets() {
     gui.close();
     const influences = faceArray[0].morphTargetInfluences!;
     for (let [key, value] of Object.entries(faceArray[0].morphTargetDictionary!)) {
+        let requiredObj = Object.keys(blendshapesMap).find(blendKeys => blendshapesMap[blendKeys].includes(key));
+        if (requiredObj) {
+            let option = document.createElement("option");
+            option.value = key;
+            option.text = requiredObj;
+            actionUnitsSelect.add(option);
+        }
         gui.add(influences, value, 0, 1, 0.01)
             .name(key.replace('blendShape1.', ''))
             .listen(true)
@@ -298,7 +310,8 @@ function draw3dScene(results: FaceLandmarkerResult) {
                 for (const blendshape of results.faceBlendshapes[0].categories) {
                     const actionUnitsArray = blendshapesMap[blendshape.categoryName];
                     actionUnitsArray?.forEach(actionUnits => {
-                        face.morphTargetInfluences![face.morphTargetDictionary![actionUnits]] = amplificationValue * blendshape.score;
+                        face.morphTargetInfluences![face.morphTargetDictionary![actionUnits]] = actionUnits == selectedAction ? amplificationValue * blendshape.score : blendshape.score;
+                        console.log(actionUnits, selectedAction);
                     });
                 }
             }
@@ -306,7 +319,7 @@ function draw3dScene(results: FaceLandmarkerResult) {
 
         if (results.facialTransformationMatrixes.length > 0) {
             let matrix = new THREE.Matrix4().fromArray(results.facialTransformationMatrixes[0].data);
-            matrix.scale(new THREE.Vector3(5, 5, 5));
+            matrix.scale(new THREE.Vector3(7, 7, 7));
             // Set new position and rotation from matrix
             mesh.matrix.copy(matrix);
         }
