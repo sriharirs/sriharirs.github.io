@@ -174,11 +174,13 @@ async function preLoadAssets() {
     const gui = new GUI({ width: 500 });
     gui.close();
     const influences = faceArray[0].morphTargetInfluences!;
+    let map = new Set<string>();
     for (let [key, value] of Object.entries(faceArray[0].morphTargetDictionary!)) {
         let requiredObj = Object.keys(blendshapesMap).find(blendKeys => blendshapesMap[blendKeys].includes(key));
-        if (requiredObj) {
+        if (requiredObj && !map.has(requiredObj)) {
+            map.add(requiredObj);
             let option = document.createElement("option");
-            option.value = key;
+            option.value = requiredObj;
             option.text = requiredObj;
             actionUnitsSelect.add(option);
         }
@@ -310,8 +312,7 @@ function draw3dScene(results: FaceLandmarkerResult) {
                 for (const blendshape of results.faceBlendshapes[0].categories) {
                     const actionUnitsArray = blendshapesMap[blendshape.categoryName];
                     actionUnitsArray?.forEach(actionUnits => {
-                        face.morphTargetInfluences![face.morphTargetDictionary![actionUnits]] = actionUnits == selectedAction ? amplificationValue * blendshape.score : blendshape.score;
-                        console.log(actionUnits, selectedAction);
+                        face.morphTargetInfluences![face.morphTargetDictionary![actionUnits]] = blendshape.categoryName == selectedAction ? amplificationValue * blendshape.score : blendshape.score;
                     });
                 }
             }
