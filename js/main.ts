@@ -136,9 +136,18 @@ fileInput.addEventListener("change", function() {
 });
 
 let amplificationValue = 1;
-const range = document.getElementById("myRange") as HTMLInputElement;
+const range = document.getElementById("amplification") as HTMLInputElement;
+
 range.oninput = () => {
-    amplificationValue = parseFloat(range.value);
+    let number = parseFloat(range.value);
+    if (number < 1) {
+        range.value = "1";
+        number = 1;
+    } else if (number > 3) {
+        range.value = "3";
+        number = 3;
+    }
+    amplificationValue = number;
 }
 
 const actionUnitsSelect = document.getElementById("actionUnits") as HTMLSelectElement;
@@ -171,12 +180,15 @@ async function preLoadAssets() {
     faceArray[1] = mesh.getObjectByName('CC_Base_Body001_2') as THREE.Mesh;
     glass = mesh.getObjectByName('glass')!;
     glass.visible = false;
+
     const gui = new GUI({ width: 500 });
     gui.close();
+
     const influences = faceArray[0].morphTargetInfluences!;
     let map = new Set<string>();
     for (let [key, value] of Object.entries(faceArray[0].morphTargetDictionary!)) {
         let requiredObj = Object.keys(blendshapesMap).find(blendKeys => blendshapesMap[blendKeys].includes(key));
+
         if (requiredObj && !map.has(requiredObj)) {
             map.add(requiredObj);
             let option = document.createElement("option");
@@ -184,6 +196,7 @@ async function preLoadAssets() {
             option.text = requiredObj;
             actionUnitsSelect.add(option);
         }
+
         gui.add(influences, value, 0, 1, 0.01)
             .name(key.replace('blendShape1.', ''))
             .listen(true)
@@ -191,7 +204,7 @@ async function preLoadAssets() {
                 faceArray[0].morphTargetDictionary![key] = userValue;
             });
     }
-
+    selectedAction = actionUnitsSelect.selectedOptions[0].value;
     demosSection.classList.remove("invisible");
 }
 preLoadAssets();
