@@ -61,6 +61,33 @@ const blendshapesMap: Record<string, string[]> = {
     'tongueOut': ['Tongue_Out'],
 };
 
+const actionUnitsMap: Record<string, string[]> = {
+    "brow": ["browDownLeft", "browDownRight", "browInnerUp", "browOuterUpLeft", "browOuterUpRight"],
+    "cheek": ["cheekPuff", "cheekSquintLeft", "cheekSquintRight"],
+    "eyeBlink": ["eyeBlinkLeft", "eyeBlinkRight"],
+    "eyeLookUp": ["eyeLookUpLeft", "eyeLookUpRight"],
+    "eyeLookDown": ["eyeLookDownLeft", "eyeLookDownRight"],
+    "eyeLookIn": ["eyeLookInLeft", "eyeLookInRight"],
+    "eyeLookOut": ["eyeLookOutLeft", "eyeLookOutRight"],
+    "eyeSquint": ["eyeSquintLeft", "eyeSquintRight"],
+    "eyeWide": ["eyeWideLeft", "eyeWideRight"],
+    "jaw": ["jawForward", "jawLeft", "jawOpen", "jawRight"],
+    "mouthClose": ["mouthClose"],
+    "mouthSmile": ["mouthSmileLeft", "mouthSmileRight"],
+    "mouthFrown": ["mouthFrownLeft", "mouthFrownRight"],
+    "mouthStretch": ["mouthStretchLeft", "mouthStretchRight"],
+    "mouthPucker": ["mouthPucker"],
+    "mouthFunnel": ["mouthFunnel"],
+    "mouthShrug": ["mouthShrugLower", "mouthShrugUpper"],
+    "mouthDimple": ["mouthDimpleLeft", "mouthDimpleRight"],
+    "mouthRoll": ["mouthRollLower", "mouthRollUpper"],
+    "mouthPress": ["mouthPressLeft", "mouthPressRight"],
+    "mouthLowerDown": ["mouthLowerDownLeft", "mouthLowerDownRight"],
+    "mouthUpperUp": ["mouthUpperUpLeft", "mouthUpperUpRight"],
+    "mouthDirection": ["mouthLeft", "mouthRight"],
+    "nose": ["noseSneerLeft", "noseSneerRight"],
+    "tongue": ["tongueOut"]
+};
 // Set up the Three.js scene and attach it to html element with id '3dscene'
 const container = document.getElementById('3dscene')!;
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -185,18 +212,7 @@ async function preLoadAssets() {
     gui.close();
 
     const influences = faceArray[0].morphTargetInfluences!;
-    let map = new Set<string>();
     for (let [key, value] of Object.entries(faceArray[0].morphTargetDictionary!)) {
-        let requiredObj = Object.keys(blendshapesMap).find(blendKeys => blendshapesMap[blendKeys].includes(key));
-
-        if (requiredObj && !map.has(requiredObj)) {
-            map.add(requiredObj);
-            let option = document.createElement("option");
-            option.value = requiredObj;
-            option.text = requiredObj;
-            actionUnitsSelect.add(option);
-        }
-
         gui.add(influences, value, 0, 1, 0.01)
             .name(key.replace('blendShape1.', ''))
             .listen(true)
@@ -204,6 +220,14 @@ async function preLoadAssets() {
                 faceArray[0].morphTargetDictionary![key] = userValue;
             });
     }
+
+    for (let [key, _] of Object.entries(actionUnitsMap)) {
+        let option = document.createElement("option");
+        option.value = key;
+        option.text = key;
+        actionUnitsSelect.add(option);
+    }
+
     selectedAction = actionUnitsSelect.selectedOptions[0].value;
     demosSection.classList.remove("invisible");
 }
@@ -325,7 +349,11 @@ function draw3dScene(results: FaceLandmarkerResult) {
                 for (const blendshape of results.faceBlendshapes[0].categories) {
                     const actionUnitsArray = blendshapesMap[blendshape.categoryName];
                     actionUnitsArray?.forEach(actionUnits => {
-                        face.morphTargetInfluences![face.morphTargetDictionary![actionUnits]] = blendshape.categoryName == selectedAction ? amplificationValue * blendshape.score : blendshape.score;
+                        if (actionUnitsMap[selectedAction].includes(blendshape.categoryName)) {
+                            face.morphTargetInfluences![face.morphTargetDictionary![actionUnits]] = amplificationValue * blendshape.score;
+                        } else {
+                            face.morphTargetInfluences![face.morphTargetDictionary![actionUnits]] = blendshape.score;
+                        }
                     });
                 }
             }
