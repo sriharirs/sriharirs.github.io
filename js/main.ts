@@ -81,13 +81,6 @@ const actionUnitsMap: Record<string, string[]> = {
     "browOuterUpRight",
   ],
   ["cheek"]: ["cheekPuff", "cheekSquintLeft", "cheekSquintRight"],
-  ["eyeBlink"]: ["eyeBlinkLeft", "eyeBlinkRight"],
-  ["eyeLookUp"]: ["eyeLookUpLeft", "eyeLookUpRight"],
-  ["eyeLookDown"]: ["eyeLookDownLeft", "eyeLookDownRight"],
-  ["eyeLookIn"]: ["eyeLookInLeft", "eyeLookInRight"],
-  ["eyeLookOut"]: ["eyeLookOutLeft", "eyeLookOutRight"],
-  ["eyeSquint"]: ["eyeSquintLeft", "eyeSquintRight"],
-  ["eyeWide"]: ["eyeWideLeft", "eyeWideRight"],
   ["jaw"]: ["jawForward", "jawLeft", "jawOpen", "jawRight"],
   ["mouthClose"]: ["mouthClose"],
   ["mouthSmile"]: ["mouthSmileLeft", "mouthSmileRight"],
@@ -102,8 +95,6 @@ const actionUnitsMap: Record<string, string[]> = {
   ["mouthLowerDown"]: ["mouthLowerDownLeft", "mouthLowerDownRight"],
   ["mouthUpperUp"]: ["mouthUpperUpLeft", "mouthUpperUpRight"],
   ["mouthDirection"]: ["mouthLeft", "mouthRight"],
-  ["nose"]: ["noseSneerLeft", "noseSneerRight"],
-  ["tongue"]: ["tongueOut"],
 };
 
 // ───── THREE.JS SCENE SETUP ─────
