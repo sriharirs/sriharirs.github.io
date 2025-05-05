@@ -393,28 +393,34 @@ async function predictWebcam() {
 
 // ───── RENDERING ─────
 function draw3dScene(results: FaceLandmarkerResult) {
-  if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
-    if (results.faceBlendshapes.length > 0) {
+  if (
+    video.readyState < HTMLMediaElement.HAVE_METADATA ||
+    results.faceBlendshapes.length === 0
+  ) {
+    return;
+  }
+
+  for (const blendshape of results.faceBlendshapes[0].categories) {
+    const value = actionUnitsMap[selectedAction].includes(
+      blendshape.categoryName,
+    )
+      ? Math.min(1, amplificationValue * blendshape.score)
+      : blendshape.score;
+
+    for (const target of blendshapesMap[blendshape.categoryName] ?? []) {
       for (const face of faceArray) {
-        for (const blendshape of results.faceBlendshapes[0].categories) {
-          const targets = blendshapesMap[blendshape.categoryName];
-          targets?.forEach((target) => {
-            face.morphTargetInfluences![face.morphTargetDictionary![target]] =
-              actionUnitsMap[selectedAction]?.includes(blendshape.categoryName)
-                ? Math.min(1, amplificationValue * blendshape.score)
-                : blendshape.score;
-          });
-        }
+        const index = face.morphTargetDictionary![target];
+        face.morphTargetInfluences![index] = value;
       }
     }
+  }
 
-    if (results.facialTransformationMatrixes.length > 0) {
-      mesh.matrix.copy(
-        new THREE.Matrix4()
-          .fromArray(results.facialTransformationMatrixes[0].data)
-          .scale(new THREE.Vector3(7, 7, 7)),
-      );
-    }
+  if (results.facialTransformationMatrixes.length > 0) {
+    mesh.matrix.copy(
+      new THREE.Matrix4()
+        .fromArray(results.facialTransformationMatrixes[0].data)
+        .scale(new THREE.Vector3(7, 7, 7)),
+    );
   }
 
   renderer.render(scene, camera);
