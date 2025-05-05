@@ -177,11 +177,7 @@ let amplificationValue = 1;
 const range = document.getElementById("amplification") as HTMLInputElement;
 range.oninput = () => {
   amplificationValue = parseFloat(range.value);
-  if (Number.isNaN(amplificationValue)) {
-    amplificationValue = 1;
-  } else if (amplificationValue >= 3) {
-    amplificationValue = 3;
-  } else if (amplificationValue <= 1) {
+  if (Number.isNaN(amplificationValue) || amplificationValue <= 0) {
     amplificationValue = 1;
   }
   range.value = amplificationValue.toString();
