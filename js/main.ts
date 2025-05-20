@@ -215,10 +215,10 @@ async function preLoadAssets() {
   scene.add(mesh);
 
   faceArray = [
-    mesh.getObjectByName("CC_Base_Body001_1") as THREE.Mesh,
-    mesh.getObjectByName("CC_Base_Body001_2") as THREE.Mesh,
+    mesh.getObjectByName("0000_mean_face001") as THREE.Mesh,
+    mesh.getObjectByName("0000_mean_face001_1") as THREE.Mesh,
   ];
-  glass = mesh.getObjectByName("glass")!;
+  glass = mesh.getObjectByName("sunglasses003")!;
   glass.visible = false;
 
   const gui = new GUI({ width: 500 });
@@ -398,11 +398,10 @@ function draw3dScene(results: FaceLandmarkerResult) {
       ? Math.min(1, amplificationValue * blendshape.score)
       : blendshape.score;
 
-    for (const target of blendshapesMap[blendshape.categoryName] ?? []) {
-      for (const face of faceArray) {
-        const index = face.morphTargetDictionary![target];
-        face.morphTargetInfluences![index] = value;
-      }
+    for (const face of faceArray) {
+      const index = face.morphTargetDictionary![blendshape.categoryName];
+      console.log(`index of ${blendshape.categoryName} is ${index}`);
+      face.morphTargetInfluences![index] = value;
     }
   }
 
