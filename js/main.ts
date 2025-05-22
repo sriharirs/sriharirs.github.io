@@ -11,128 +11,64 @@ import {
   Category,
 } from "@mediapipe/tasks-vision";
 
-// Blendshapes to morph target mapping
-const blendshapesMap: Record<string, string[]> = {
-  ["browDownLeft"]: ["Brow_Drop_L"],
-  ["browDownRight"]: ["Brow_Drop_R"],
-  ["browInnerUp"]: ["Brow_Raise_Inner_L", "Brow_Raise_Inner_R"],
-  ["browOuterUpLeft"]: ["Brow_Raise_Outer_L"],
-  ["browOuterUpRight"]: ["Brow_Raise_Outer_R"],
-  ["cheekPuff"]: ["Cheek_Puff_L", "Cheek_Puff_R"],
-  ["cheekSquintLeft"]: ["Cheek_Raise_L"],
-  ["cheekSquintRight"]: ["Cheek_Raise_R"],
-  ["eyeBlinkLeft"]: ["Eye_Blink_L"],
-  ["eyeBlinkRight"]: ["Eye_Blink_R"],
-  ["eyeLookDownLeft"]: ["Eye_L_Look_Down"],
-  ["eyeLookDownRight"]: ["Eye_R_Look_Down"],
-  ["eyeLookInLeft"]: ["Eye_L_Look_R"],
-  ["eyeLookInRight"]: ["Eye_R_Look_L"],
-  ["eyeLookOutLeft"]: ["Eye_L_Look_L"],
-  ["eyeLookOutRight"]: ["Eye_R_Look_R"],
-  ["eyeLookUpLeft"]: ["Eye_L_Look_Up"],
-  ["eyeLookUpRight"]: ["Eye_R_Look_Up"],
-  ["eyeSquintLeft"]: ["Eye_Squint_L"],
-  ["eyeSquintRight"]: ["Eye_Squint_R"],
-  ["eyeWideLeft"]: ["Eye_Wide_L"],
-  ["eyeWideRight"]: ["Eye_Wide_R"],
-  ["jawForward"]: ["Jaw_Forward"],
-  ["jawLeft"]: ["Jaw_L"],
-  ["jawOpen"]: ["Jaw_open_close"],
-  ["jawRight"]: ["Jaw_R"],
-  ["mouthClose"]: ["Mouth_open_close"],
-  ["mouthDimpleLeft"]: ["Mouth_Dimple_L"],
-  ["mouthDimpleRight"]: ["Mouth_Dimple_R"],
-  ["mouthFrownLeft"]: ["Mouth_Frown_L"],
-  ["mouthFrownRight"]: ["Mouth_Frown_R"],
-  ["mouthFunnel"]: ["Mouth_Funnel_Up_L", "Mouth_Funnel_Up_R"],
-  ["mouthLeft"]: ["Mouth_L"],
-  ["mouthLowerDownLeft"]: ["Mouth_Down_Lower_L"],
-  ["mouthLowerDownRight"]: ["Mouth_Down_Lower_R"],
-  ["mouthPressLeft"]: ["Mouth_Press_L"],
-  ["mouthPressRight"]: ["Mouth_Press_R"],
-  ["mouthPucker"]: [
-    "Mouth_Pucker_Up_L",
-    "Mouth_Pucker_Up_R",
-    "Mouth_Pucker_Down_R",
-    "Mouth_Pucker_Down_L",
-  ],
-  ["mouthRight"]: ["Mouth_R"],
-  ["mouthRollLower"]: ["Mouth_Roll_In_Lower_L", "Mouth_Roll_In_Lower_R"],
-  ["mouthRollUpper"]: ["Mouth_Roll_In_Upper_L", "Mouth_Roll_In_Upper_R"],
-  ["mouthShrugLower"]: ["Mouth_Shrug_Lower"],
-  ["mouthShrugUpper"]: ["Mouth_Shrug_Upper"],
-  ["mouthSmileLeft"]: ["Mouth_Smile_L"],
-  ["mouthSmileRight"]: ["Mouth_Smile_R"],
-  ["mouthStretchLeft"]: ["Mouth_Stretch_L"],
-  ["mouthStretchRight"]: ["Mouth_Stretch_R"],
-  ["mouthUpperUpLeft"]: ["Mouth_Up_Upper_L"],
-  ["mouthUpperUpRight"]: ["Mouth_Up_Upper_R"],
-  ["noseSneerLeft"]: ["Nose_Sneer_L"],
-  ["noseSneerRight"]: ["Nose_Sneer_R"],
-  ["tongueOut"]: ["Tongue_Out"],
-};
-
-const actionUnitsMap: Record<string, string[]> = {
-  ["Inner Brow Raiser"]: ["browInnerUp"],
-  ["Outer Brow Raiser"]: ["browOuterUpRight"],
-  ["Brow Lowerer"]: ["browDownLeft", "browDownRight"],
-  ["Upper Lid Raiser"]: ["eyeLookUpLeft", "eyeLookUpRight"],
-  ["Cheek Raiser"]: ["cheekSquintLeft", "cheekSquintRight"],
-  ["Lid Tightener"]: ["eyeBlinkLeft", "eyeBlinkRight"],
-  ["Nose Wrinkler"]: ["noseSneerLeft", "noseSneerRight"],
-  ["Lip Corner Puller"]: ["mouthSmileLeft", "mouthSmileRight"],
-  ["Dimpler"]: ["mouthLeft", "mouthRight"],
-  ["Lip Corner Depressor"]: ["mouthFrownLeft", "mouthFrownRight"],
-  ["Chin Raiser"]: [],
-  ["Lip Stretcher"]: ["mouthFrownLeft", "mouthFrownRight"],
-  ["Lip Tightener"]: ["mouthPucker"],
-  ["Jaw Drop"]: ["jawOpen"],
-  ["Smile"]: [
-    "cheekSquintLeft",
-    "cheekSquintRight",
-    "mouthSmileLeft",
-    "mouthSmileRight",
-  ],
-  ["Frown"]: [
-    "browInnerUp",
-    "browDownLeft",
-    "browDownRight",
-    "mouthFrownLeft",
-    "mouthFrownRight",
-  ],
-  ["Surprise"]: [
-    "browInnerUp",
-    "browOuterUpRight",
-    "eyeLookUpLeft",
-    "eyeLookUpRight",
-    "jawOpen",
-  ],
-  ["Fear"]: [
-    "browInnerUp",
-    "browOuterUpRight",
-    "eyeLookUpLeft",
-    "eyeLookUpRight",
-    "eyeBlinkLeft",
-    "eyeBlinkRight",
-    "mouthFrownLeft",
-    "mouthFrownRight",
-    "jawOpen",
-  ],
-  ["Angry Face"]: [
-    "browDownLeft",
-    "browDownRight",
-    "eyeLookUpLeft",
-    "eyeLookUpRight",
-    "eyeBlinkLeft",
-    "eyeBlinkRight",
-    "mouthPucker",
-  ],
-  ["Disgusted Face"]: [
-    "noseSneerLeft",
-    "noseSneerRight",
-    "mouthFrownLeft",
-    "mouthFrownRight",
-  ],
+type ActionUnitDescript = { descript: string; blendShapes: string[] };
+const actionUnitsMap: Record<string, ActionUnitDescript> = {
+  ["AU 1"]: {
+    descript: "Inner Brow Raiser",
+    blendShapes: ["browInnerUp"],
+  },
+  ["AU 2"]: {
+    descript: "Outer Brow Raiser",
+    blendShapes: ["browOuterUpLeft", "browOuterUpRight"],
+  },
+  ["AU 4"]: {
+    descript: "Brow Lowerer",
+    blendShapes: ["browDownLeft", "browDownRight"],
+  },
+  ["AU 5"]: {
+    descript: "Upper Lid Raiser",
+    blendShapes: ["eyeWideLeft", "eyeWideRight"],
+  },
+  ["AU 6"]: {
+    descript: "Cheek Raiser",
+    blendShapes: ["cheekSquintLeft", "cheekSquintRight"],
+  },
+  ["AU 7"]: {
+    descript: "Lid Tightener",
+    blendShapes: ["eyeBlinkLeft", "eyeBlinkRight"],
+  },
+  ["AU 9"]: {
+    descript: "Nose Wrinkler",
+    blendShapes: ["noseSneerLeft", "noseSneerRight"],
+  },
+  ["AU 12"]: {
+    descript: "Lip Corner Puller",
+    blendShapes: ["mouthSmileLeft", "mouthSmileRight"],
+  },
+  ["AU 14"]: {
+    descript: "Dimpler",
+    blendShapes: ["mouthDimpleLeft", "mouthDimpleRight"],
+  },
+  ["AU 15"]: {
+    descript: "Lip Corner Depressor",
+    blendShapes: ["mouthFrownLeft", "mouthFrownRight"],
+  },
+  ["AU 17"]: {
+    descript: "Chin Raiser",
+    blendShapes: ["chinRaise"],
+  },
+  ["AU 20"]: {
+    descript: "Lip Stretcher",
+    blendShapes: ["mouthStretchLeft", "mouthStretchRight"],
+  },
+  ["AU 23"]: {
+    descript: "Lip Tightener",
+    blendShapes: ["mouthPressLeft", "mouthPressRight"],
+  },
+  ["AU 26"]: {
+    descript: "Jaw Drop",
+    blendShapes: ["jawOpen"],
+  },
 };
 
 // ───── THREE.JS SCENE SETUP ─────
@@ -223,8 +159,9 @@ const enableGlass = document.getElementById("glassButton")!;
 
 // ───── ASSETS AND MODEL LOADING ─────
 let mesh: THREE.Object3D, glass: THREE.Object3D;
-let faceArray: THREE.Mesh[] = [],
-  faceLandmarker: FaceLandmarker;
+let faceArray: THREE.Mesh[] = [];
+let eyes: THREE.Mesh;
+let faceLandmarker: FaceLandmarker;
 
 async function preLoadAssets() {
   const faceLandmarkerResult = FaceLandmarker.createFromOptions(
@@ -256,6 +193,7 @@ async function preLoadAssets() {
     mesh.getObjectByName("0000_mean_face001") as THREE.Mesh,
     mesh.getObjectByName("0000_mean_face001_1") as THREE.Mesh,
   ];
+  eyes = mesh.getObjectByName("Right_Eyeball_Mesh001") as THREE.Mesh;
   glass = mesh.getObjectByName("sunglasses003")!;
   glass.visible = false;
 
@@ -272,8 +210,11 @@ async function preLoadAssets() {
       .listen(true);
   }
 
-  for (const key of Object.keys(actionUnitsMap)) {
-    let option = new Option(key, key);
+  for (const actionUnit in actionUnitsMap) {
+    let option = new Option(
+      `${actionUnit} (${actionUnitsMap[actionUnit].descript})`,
+      actionUnit,
+    );
     actionUnitsSelect.add(option);
   }
 
@@ -430,15 +371,18 @@ function draw3dScene(results: FaceLandmarkerResult) {
   }
 
   for (const blendshape of results.faceBlendshapes[0].categories) {
-    const value = actionUnitsMap[selectedAction].includes(
+    const value = actionUnitsMap[selectedAction].blendShapes.includes(
       blendshape.categoryName,
     )
       ? Math.min(1, amplificationValue * blendshape.score)
       : blendshape.score;
 
+    if (blendshape.categoryName.startsWith("eye")) {
+      const index = eyes.morphTargetDictionary![blendshape.categoryName];
+      eyes.morphTargetInfluences![index] = value;
+    }
     for (const face of faceArray) {
       const index = face.morphTargetDictionary![blendshape.categoryName];
-      console.log(`index of ${blendshape.categoryName} is ${index}`);
       face.morphTargetInfluences![index] = value;
     }
   }
