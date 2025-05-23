@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 import {
   FaceLandmarker,
   FilesetResolver,
@@ -55,7 +54,12 @@ const actionUnitsMap: Record<string, ActionUnitDescript> = {
   },
   ["AU 17"]: {
     descript: "Chin Raiser",
-    blendShapes: ["chinRaise"],
+    blendShapes: [
+      "mouthLowerDownRight",
+      "mouthLowerDownRight",
+      "jawForward",
+      "jawOpen",
+    ],
   },
   ["AU 20"]: {
     descript: "Lip Stretcher",
@@ -196,19 +200,6 @@ async function preLoadAssets() {
   eyes = mesh.getObjectByName("Right_Eyeball_Mesh001") as THREE.Mesh;
   glass = mesh.getObjectByName("sunglasses003")!;
   glass.visible = false;
-
-  const gui = new GUI({ width: 500 });
-  gui.close();
-
-  const influences = faceArray[0].morphTargetInfluences!;
-  for (let [key, index] of Object.entries(
-    faceArray[0].morphTargetDictionary!,
-  )) {
-    gui
-      .add(influences, index, 0, 1, 0.01)
-      .name(key.replace("blendShape1.", ""))
-      .listen(true);
-  }
 
   for (const actionUnit in actionUnitsMap) {
     let option = new Option(
@@ -391,7 +382,7 @@ function draw3dScene(results: FaceLandmarkerResult) {
     mesh.matrix.copy(
       new THREE.Matrix4()
         .fromArray(results.facialTransformationMatrixes[0].data)
-        .scale(new THREE.Vector3(7, 7, 7)),
+        .scale(new THREE.Vector3(7.5, 7.5, 7.5)),
     );
   }
 
@@ -401,13 +392,40 @@ function draw3dScene(results: FaceLandmarkerResult) {
 
 // ───── UTILITY: Display blend shapes ─────
 function printBlendShapes(blendShapes: Category[]) {
-  return blendShapes
-    .map(
-      (shape) => `
+  var totalActionUnits = "";
+  for (var actionUnit in actionUnitsMap) {
+    let currentActionUnits = `
+        <ul class="au-item">
+            <span>${actionUnit}</span>`;
+    for (var shape of blendShapes) {
+      if (actionUnitsMap[actionUnit].blendShapes.includes(shape.categoryName)) {
+        const value = actionUnitsMap[selectedAction].blendShapes.includes(
+          shape.categoryName,
+        )
+          ? Math.min(1, amplificationValue * shape.score)
+          : shape.score;
+
+        currentActionUnits += `
         <li class="blend-shapes-item">
             <span class="blend-shapes-label">${shape.displayName || shape.categoryName}</span>
-            <span class="blend-shapes-value" style="width: calc(${shape.score * 100}% - 120px)">${shape.score.toFixed(4)}</span>
-        </li>`,
-    )
-    .join("");
+            <span class="blend-shapes-value" style="width: calc(${shape.score * 100}% - 120px)">
+            ${shape.score.toFixed(4)},${value.toFixed(4)}
+            </span>
+        </li>`;
+      }
+    }
+    currentActionUnits += `</ul><br>`;
+    totalActionUnits += currentActionUnits;
+  }
+
+  return totalActionUnits;
+  // return blendShapes
+  //   .map(
+  //     (shape) => `
+  //       <li class="blend-shapes-item">
+  //           <span class="blend-shapes-label">${shape.displayName || shape.categoryName}</span>
+  //           <span class="blend-shapes-value" style="width: calc(${shape.score * 100}% - 120px)">${shape.score.toFixed(4)}</span>
+  //       </li>`,
+  //   )
+  //   .join("");
 }
