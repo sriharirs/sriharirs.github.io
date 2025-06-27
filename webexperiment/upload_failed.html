@@ -1,0 +1,30 @@
+<div style="text-align: left;">
+    <h2>The upload to our server failed!</h2>
+    Please now first read the following instructions carefully without executing the actions. Be sure to understand them, before acutally performing the
+    actions step-by-step.
+    <ol>
+        <li>Click on this
+            <a href="#" id="csl_data_download_button" onclick="{
+            let upload_details = jsPsych.data.get().last(1).values()[0]
+
+            const a = document.createElement('a');
+            a.download = upload_details.filename;
+            a.href = upload_details.url;
+            a.click();
+            return false;
+        }">download</a>
+            link and save the file to your computer. Please remember the location you saved the file to.
+            <p><b>You must not rename the file and keep the suggested filename as is.</b></p>
+        </li>
+        <li>Click on this <a href="https://owncloud.csl.uni-bremen.de/s/MQqCYwmy6YBdS9d" target="_blank">link</a> to
+            open our upload server in a new browser window.
+            <p><b>This tab remains open so that you can come
+            back and finish the experiment afterwards.</b></p>
+        </li>
+        <li>Change to the new browser window and upload the file wih the experiment data saved on your computer, either
+            using drag-and-drop or the 'select and drop files' button in the middle of the screen.
+            <p><b>Be patient until the upload finished successfully.</b></p>
+            </li>
+        <li>Please return to this browser window after successfull upload of the data and proceed.</li>
+    </ol>
+</div>
