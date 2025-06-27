@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Steph's experiment</title>
+  <script src="https://unpkg.com/jspsych@7.3.1"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.1.2"></script>
+  <script src="https://unpkg.com/htmlincludejs"></script>
+  <link href="https://unpkg.com/jspsych@7.3.1/css/jspsych.css" rel="stylesheet" type="text/css" />
+  <link href="experiment_1.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body></body>
+<script>
+
+  var pattern = "squares"
+
+  const slides_names = {
+    "introduction": "./slides/introduction.html"
+  };
+
+  const replacements = {
+    "pattern": pattern
+  }
+
+  var slides_content = {};
+
+  Object.keys(slides_names).forEach(key => {
+    const req = new XMLHttpRequest();
+    req.open("GET", slides_names[key], false);
+    req.send();
+    text = req.response;
+
+    Object.keys(replacements).forEach(key => {
+      text = '<div class="canvas">' + text.replace("$" + key + "$", replacements[key]) + "</div>";
+    });
+    slides_content[key] = text;
+  });
+
+
+  const jsPsych = initJsPsych();
+
+
+  var hello_trial = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: slides_content["introduction"]
+  }
+
+  const timeline = [hello_trial]
+
+  jsPsych.run(timeline);
+</script>
+
+</html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>CCSR Experiment 1</title>
+    <script src="https://unpkg.com/jspsych@7.3.1"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/extension-record-video@1.0.1/dist/index.browser.js"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-initialize-camera@1.0.1/dist/index.browser.js"></script>
+    <script src="https://unpkg.com/@jspsych-contrib/extension-mediapipe-face-mesh@2.0.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-slider-response@1.1.2"></script>
+
+    <script src="jsPsych/extension-unity.js"></script>
+    <script src="jsPsych/plugin-moot.js"></script>
+
+    <link href="https://unpkg.com/jspsych@7.3.1/css/jspsych.css" rel="stylesheet" type="text/css" />
+    <link href="experiment_1.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body></body>
+<script>
+
+    // Parameters of current condition
+    // The values give the probabilities
+    var condition = {
+        targetpattern_squares: Math.random() < 0.5,
+        doppelgaenger_color_white: Math.random() < 0.5,
+        doppelgaenger_up: Math.random() < 0.5,
+        questionnaire_doppelgaenger_first: Math.random() < 0.5
+    }
+
+
+    // Global configuration parameters
+    var experiment_config = {
+        ////////////////////////////////////////
+        // RECORDING OF LIVE-TRACKING PARAMETERS
+        //
+        // Should the animation parameters for the Doppelgaenger/Other be recorded?
+        // Preferable to recodring of mediapipe tracking directly, because it 
+        // reflects what the participants saw on the screen
+        //
+        record_doppelgaenger_animation: false, // <- CHANGE TO TRUE
+        record_other_animation: false,
+        record_mediapipe: false,
+    }
+
+    // The mapping of slides to html files
+    const slides_names = {
+
+    };
+
+    // Placeholders/replacements
+    const replacements = {
+        "pattern": condition.targetpattern_squares ? "squares" : "triangles"
+    }
+
+
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    //// PREPARATION
+
+    // Load the html files and replace placeholders
+    var slides_content = {};
+    Object.keys(slides_names).forEach(key => {
+        const req = new XMLHttpRequest();
+        req.open("GET", slides_names[key], false);
+        req.send();
+        text = req.response;
+
+        Object.keys(replacements).forEach(key => {
+            text = '<div class="canvas">' + text.replace("$" + key + "$", replacements[key]) + "</div>";
+        });
+        slides_content[key] = text;
+    });
+
+    const jsPsych = initJsPsych({
+        extensions: [
+            {
+                type: jsPsychUnityExtension,
+                params: {
+                    loaderUrl: "./moot/moot_online.loader.js",
+                    dataUrl: "./moot/moot_online.data.unityweb",
+                    frameworkUrl: "./moot/moot_online.framework.js.unityweb",
+                    codeUrl: "./moot/moot_online.wasm.unityweb",
+                    width: "800px",
+                    height: "500px",
+                    waitEvent: 'JSPsychUnityReadyEvent'
+                }
+            },
+            {
+                type: jsPsychExtensionMediapipeFacemesh,
+                params: {
+                    locateFile: (file) => {
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                    }
+                }
+            },
+            { type: jsPsychExtensionRecordVideo },
+        ],
+        on_finish: function () {
+            // jsPsych.data.displayData('json');
+            jsPsych.data.get().localSave('json', 'mydata.json');
+            // FileSaver.saveAs(jsPsych.data.get().json(), "hello world.txt");
+        }
+    });
+
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // CREATE TRIALS FROM PSYCHOPY PLUGINS
+
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    //// INITIALIZATION, OTHER STUFF
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+
+    const initCamera = {
+        type: jsPsychInitializeCamera,
+        include_audio: true
+    }
+
+    const enter_fullscreen = {
+        type: jsPsychFullscreen,
+        fullscreen_mode: true
+    }
+
+    const exit_fullscreen = {
+        type: jsPsychFullscreen,
+        fullscreen_mode: false,
+        delay_after: 0
+    }
+
+    const debug_condition = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: "<div><p>Condition</p><p>"+JSON.stringify(condition, null, 2)+"</p></div>",
+        trial_duration: 1000
+    }
+    
+
+
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    //// INTRODUCTION
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+
+
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    //// PRACTICE
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+   
+    
+    var practiceUnitytrial_1 = {
+
+            type: jsPsychMootPlugin,
+            moot_parameters: {
+            doggelgaenger_col:  "0,0,0",
+            doggelgaenger_loc: "-20,0,-10",
+            doppelgaenger_target: "TR",
+
+            nogo_type1_target_right: 1,
+            doppelgaenger_anim_rec: experiment_config.record_doppelgaenger_animation,
+            other_anim_rec: experiment_config.record_other_animation
+            },
+            extensions: [{ type: jsPsychUnityExtension },
+            {
+                type: jsPsychExtensionMediapipeFacemesh,
+                params: {
+                    record: false,
+                }
+            }
+            ]
+
+        }
+        var practiceSlider_1 = {
+            type: jsPsychHtmlSliderResponse,
+            stimulus: '<p>What are your emotions after Ned won the match?</p>',
+            step: 33,
+            labels: ['very happy', 'happy', 'sad', 'very sad'],
+            prompt: "<p>How happy/sad is this person?</p>",
+            on_finish: function (data) {
+                if (data.response == 66) {
+                    data.correct = 1;
+                } else {
+                    data.correct = 0;
+                }
+            }
+        }
+
+        var feedback_1 = {
+
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: function () {
+
+                var last_trial_correct = jsPsych.data.get().last(1).values()[0].correct;
+                if (last_trial_correct) {
+                    return "<p>Correct!</p>"; // the parameter value has to be returned from the function
+                } else {
+                    return "<p>Wrong.</p>"; // the parameter value has to be returned from the function
+                }
+            },
+            trial_duration: 1000,
+
+
+        }
+        var practiceUnitytrial_2 = {
+
+            type: jsPsychMootPlugin,
+            moot_parameters: {
+            doggelgaenger_col:  "0,0,0",
+            doggelgaenger_loc: "-20,0,-10",
+            doppelgaenger_target: "TR",
+
+            go_target_left: 1,
+  
+            doppelgaenger_anim_rec: experiment_config.record_doppelgaenger_animation,
+            other_anim_rec: experiment_config.record_other_animation
+            },
+            extensions: [{ type: jsPsychUnityExtension },
+            {
+                type: jsPsychExtensionMediapipeFacemesh,
+                params: {
+                    record: false,
+                }
+            }
+            ]
+
+
+        }
+        var practiceSlider_2 = {
+            type: jsPsychHtmlSliderResponse,
+            stimulus: '<p>What are your emotions after Ned won the match?</p>',
+            step: 33,
+            labels: ['very happy', 'happy', 'sad', 'very sad'],
+            prompt: "<p>How happy/sad is this person?</p>",
+            on_finish: function (data) {
+                if (data.response == 66) {
+                    data.correct = 1;
+                } else {
+                    data.correct = 0;
+                }
+            }
+        }
+
+        var feedback_2 = {
+
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: function () {
+
+                var last_trial_correct = jsPsych.data.get().last(1).values()[0].correct;
+                if (last_trial_correct) {
+                    return "<p>Correct!</p>"; // the parameter value has to be returned from the function
+                } else {
+                    return "<p>Wrong.</p>"; // the parameter value has to be returned from the function
+                }
+            },
+            trial_duration: 1000,
+
+
+        }
+        var practiceUnitytrial_3 = {
+
+            type: jsPsychMootPlugin,
+            moot_parameters: {
+            doggelgaenger_col:  "0,0,0",
+            doggelgaenger_loc:  "-20,0,-10",
+            doppelgaenger_target:  "TR",
+            
+            go_notarget_right: 1,
+
+            doppelgaenger_anim_rec: experiment_config.record_doppelgaenger_animation,
+            other_anim_rec: experiment_config.record_other_animation
+            },
+            extensions: [{ type: jsPsychUnityExtension },
+            {
+                type: jsPsychExtensionMediapipeFacemesh,
+                params: {
+                    record: false,
+                }
+            }
+            ]
+
+
+        }
+        var practiceSlider_3 = {
+            type: jsPsychHtmlSliderResponse,
+            stimulus: '<p>What are your emotions after Ned won the match?</p>',
+            step: 33,
+            labels: ['very happy', 'happy', 'sad', 'very sad'],
+            prompt: "<p>How happy/sad is this person?</p>",
+            on_finish: function (data) {
+                if (data.response == 66) {
+                    data.correct = 1;
+                } else {
+                    data.correct = 0;
+                }
+            }
+        }
+
+        var feedback_3 = {
+
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: function () {
+
+                var last_trial_correct = jsPsych.data.get().last(1).values()[0].correct;
+                if (last_trial_correct) {
+                    return "<p>Correct!</p>"; // the parameter value has to be returned from the function
+                } else {
+                    return "<p>Wrong.</p>"; // the parameter value has to be returned from the function
+                }
+            },
+            trial_duration: 1000,
+
+
+        }
+        var practiceUnitytrial_4 = {
+
+            type: jsPsychMootPlugin,
+            moot_parameters: {
+            doggelgaenger_col:  "0,0,0",
+            doggelgaenger_loc:  "-20,0,-10",
+            doppelgaenger_target:  "TR",
+            go_notarget_left: 1,
+
+            doppelgaenger_anim_rec: experiment_config.record_doppelgaenger_animation,
+            other_anim_rec: experiment_config.record_other_animation
+            },
+            extensions: [{ type: jsPsychUnityExtension },
+            {
+                type: jsPsychExtensionMediapipeFacemesh,
+                params: {
+                    record: false,
+                }
+            }
+            ]
+
+
+        }
+        var practiceSlider_4 = {
+            type: jsPsychHtmlSliderResponse,
+            stimulus: '<p>What are your emotions after Ned won the match?</p>',
+            step: 33,
+            labels: ['very happy', 'happy', 'sad', 'very sad'],
+            prompt: "<p>How happy/sad is this person?</p>",
+            on_finish: function (data) {
+                if (data.response == 66) {
+                    data.correct = 1;
+                } else {
+                    data.correct = 0;
+                }
+            }
+        }
+
+        var feedback_4 = {
+
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: function () {
+
+                var last_trial_correct = jsPsych.data.get().last(1).values()[0].correct;
+                if (last_trial_correct) {
+                    return "<p>Correct!</p>"; // the parameter value has to be returned from the function
+                } else {
+                    return "<p>Wrong.</p>"; // the parameter value has to be returned from the function
+                }
+            },
+            trial_duration: 1000,
+
+
+        }
+        
+
+
+  
+
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    //// MOOT
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+
+
+    //https://www.geeksforgeeks.org/how-to-shuffle-an-array-using-javascript/
+    function shuffleArray(array) {
+        for (var i = array.length - 1; i > 0; i--) {
+
+            // Generate random number
+            var j = Math.floor(Math.random() * (i + 1));
+
+            var temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+        }
+
+        return array;
+    }
+
+    // Create the moot blocks V1,...,V4
+    const blocks = {
+        1: {
+            doggelgaenger_col: condition.doppelgaenger_color_white ? "1,1,1" : "0,0,0",
+            doggelgaenger_loc: condition.doppelgaenger_up ? "20,0,-10" : "-20,0,-10",
+            doppelgaenger_target: condition.targetpattern_squares ? "SQ" : "TR",
+            go_notarget_left: 3,
+            go_notarget_right: 3,
+            go_target_left: 3,
+            go_target_right: 3,
+            nogo_type1_target_left: 1,
+            nogo_type1_target_right: 1,
+            doppelgaenger_anim_rec: experiment_config.record_doppelgaenger_animation,
+            other_anim_rec: experiment_config.record_other_animation
+        },
+        2: {
+            doggelgaenger_col: condition.doppelgaenger_color_white ? "1,1,1" : "0,0,0",
+            doggelgaenger_loc: condition.doppelgaenger_up ? "20,0,-10" : "-20,0,-10",
+            doppelgaenger_target: condition.targetpattern_squares ? "SQ" : "TR",
+            go_notarget_left: 2,
+            go_notarget_right: 2,
+            go_target_left: 2,
+            go_target_right: 2,
+            nogo_type1_target_left: 1,
+            nogo_type1_target_right: 1,
+            doppelgaenger_anim_rec: experiment_config.record_doppelgaenger_animation,
+            other_anim_rec: experiment_config.record_other_animation
+        },
+        3: {
+            doggelgaenger_col: condition.doppelgaenger_color_white ? "1,1,1" : "0,0,0",
+            doggelgaenger_loc: condition.doppelgaenger_up ? "20,0,-10" : "-20,0,-10",
+            doppelgaenger_target: condition.targetpattern_squares ? "SQ" : "TR",
+            go_notarget_left: 4,
+            go_notarget_right: 4,
+            go_target_left: 4,
+            go_target_right: 4,
+            nogo_type1_target_left: 1,
+            nogo_type1_target_right: 1,
+            doppelgaenger_anim_rec: experiment_config.record_doppelgaenger_animation,
+            other_anim_rec: experiment_config.record_other_animation
+        },
+        4: {
+            doggelgaenger_col: condition.doppelgaenger_color_white ? "1,1,1" : "0,0,0",
+            doggelgaenger_loc: condition.doppelgaenger_up ? "20,0,-10" : "-20,0,-10",
+            doppelgaenger_target: condition.targetpattern_squares ? "SQ" : "TR",
+            go_notarget_left: 5,
+            go_notarget_right: 5,
+            go_target_left: 5,
+            go_target_right: 5,
+            nogo_type1_target_left: 1,
+            nogo_type1_target_right: 1,
+            doppelgaenger_anim_rec: experiment_config.record_doppelgaenger_animation,
+            other_anim_rec: experiment_config.record_other_animation
+        }
+    }
+
+    const mimicry_blocks = shuffleArray([
+        { mimicry_first_target_left: 1, mimicry_second_notarget_left: 1 },
+        { mimicry_first_target_left: 1, mimicry_second_notarget_right: 1 },
+        { mimicry_first_target_right: 1, mimicry_second_notarget_left: 1 },
+        { mimicry_first_target_right: 1, mimicry_second_notarget_right: 1 },
+
+        { mimicry_first_notarget_left: 1, mimicry_second_target_left: 1 },
+        { mimicry_first_notarget_left: 1, mimicry_second_target_right: 1 },
+        { mimicry_first_notarget_right: 1, mimicry_second_target_left: 1 },
+        { mimicry_first_notarget_right: 1, mimicry_second_target_right: 1 },
+    ]);
+
+
+    trials_moot_blocks = []
+    shuffleArray(new Array(4 * 4).fill([1, 2, 3, 4]).flat()).forEach(
+        (idx, i) => {
+            const moot_parameters = Object.assign({}, blocks[idx],
+                mimicry_blocks[i]
+            );
+
+            trials_moot_blocks.push({
+                type: jsPsychMootPlugin,
+                moot_parameters: moot_parameters,
+                extensions: [
+                    { type: jsPsychUnityExtension },
+                    { type: jsPsychExtensionRecordVideo },
+                    {
+                        type: jsPsychExtensionMediapipeFacemesh,
+                        params: {
+                            record: false,
+                        },
+                    },
+                ]
+            }
+            )
+        }
+    );
+
+
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    //// QUESTIONNAIRE
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+
+    const questionnaire = [];
+
+
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    // Assemble timeline
+    const practiceBlock = [practiceUnitytrial_1, practiceSlider_1, feedback_1, practiceUnitytrial_2, practiceSlider_2, feedback_2, practiceUnitytrial_3, practiceSlider_3, feedback_3, practiceUnitytrial_4, practiceSlider_4, feedback_4];
+    const timeline = [
+        debug_condition, // <--- DEBUGIN ONLY. Remove for data collection
+        initCamera,
+        //enter_fullscreen,
+    ]
+    .concat(practiceBlock)
+    .concat(questionnaire)
+    .concat(exit_fullscreen);
+
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    // Run the experiment
+
+    console.log(timeline);
+
+    jsPsych.run(timeline);
+</script>
+
+</html>
