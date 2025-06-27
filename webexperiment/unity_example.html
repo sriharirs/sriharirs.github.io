@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Steph's experiment</title>
+    <script src="https://unpkg.com/jspsych@7.3.1"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-initialize-camera@1.0.1/dist/index.browser.js"></script>
+    <script src="https://unpkg.com/@jspsych/extension-record-video@1.0.1/dist/index.browser.js"></script>
+    <script src="https://unpkg.com/@jspsych-contrib/extension-mediapipe-face-mesh@2.0.0"></script>
+    <script src="jsPsych/extension-unity.js"></script>
+    <script src="jsPsych/plugin-moot.js"></script>
+    <link href="https://unpkg.com/jspsych@7.3.1/css/jspsych.css" rel="stylesheet" type="text/css" />
+    <link href="experiment_1.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body></body>
+<script>
+
+    var targetpattern = "squares";
+    var doppelgaenger_color_white = false;
+    var doppelgaenger_up = true;
+
+    const slides_names = {
+        "introduction": "./slides/introduction.html"
+    };
+
+    const replacements = {
+        "pattern": targetpattern
+    }
+
+    var slides_content = {};
+
+    Object.keys(slides_names).forEach(key => {
+        const req = new XMLHttpRequest();
+        req.open("GET", slides_names[key], false);
+        req.send();
+        text = req.response;
+
+        Object.keys(replacements).forEach(key => {
+            text = '<div class="canvas">' + text.replace("$" + key + "$", replacements[key]) + "</div>";
+        });
+        slides_content[key] = text;
+    });
+
+
+    const jsPsych = initJsPsych({
+        extensions: [
+            {
+                type: jsPsychUnityExtension,
+                params: {
+                    loaderUrl: "./moot/moot_online.loader.js",
+                    dataUrl: "./moot/moot_online.data.unityweb",
+                    frameworkUrl: "./moot/moot_online.framework.js.unityweb",
+                    codeUrl: "./moot/moot_online.wasm.unityweb",
+                    width: "800px",
+                    height: "500px",
+                    waitEvent: 'JSPsychUnityReadyEvent'
+                }
+            },
+            {
+                type: jsPsychExtensionMediapipeFacemesh,
+                params: {
+                    locateFile: (file) => {
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                    }
+                }
+            },
+            { type: jsPsychExtensionRecordVideo },
+        ],
+        on_finish: function () {
+            jsPsych.data.displayData('json');
+        }
+    });
+
+    const initCamera = {
+        type: jsPsychInitializeCamera
+    }
+    
+    var hello_trial = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: slides_content["introduction"]
+    }
+
+    const moot_trial = {
+        type: jsPsychMootPlugin,
+        moot_parameters: {
+            doggelgaenger_col: doppelgaenger_color_white ?  "1,1,1" : "0,0,0",
+            doggelgaenger_loc: doppelgaenger_up ? "20,0,-10" : "-20,0,-10",
+            doppelgaenger_anim_rec: false,
+            doppelgaenger_target: targetpattern == "triangles" ? "TR": "SQ",
+            go_notarget_left: 1,
+            go_notarget_right: 0,
+            go_target_left: 0,
+            go_target_right: 1,
+            nogo_type1_target_left: 0,
+            nogo_type1_target_right: 0,
+            nogo_type2_target_left: 0,
+            nogo_type2_target_right: 0,
+            nogo_type1_notarget_left: 0,
+            nogo_type1_notarget_right: 0,
+            nogo_type2_notarget_left: 0,
+            nogo_type2_notarget_right: 0,
+            other_anim_rec: false
+        },
+        extensions: [{ type: jsPsychUnityExtension },
+        {
+            type: jsPsychExtensionMediapipeFacemesh,
+            params: {
+                record: false,
+            }
+        }
+        ]
+    }
+
+
+    const timeline = [initCamera, moot_trial]
+
+    jsPsych.run(timeline);
+</script>
+
+</html>
