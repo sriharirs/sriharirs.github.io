@@ -1,0 +1,15 @@
+"use strict";function _classCallCheck(a,b){if(!(a instanceof b))throw new TypeError("Cannot call a class as a function")}function _defineProperties(a,b){for(var c,d=0;d<b.length;d++)c=b[d],c.enumerable=c.enumerable||!1,c.configurable=!0,"value"in c&&(c.writable=!0),Object.defineProperty(a,c.key,c)}function _createClass(a,b,c){return b&&_defineProperties(a.prototype,b),c&&_defineProperties(a,c),Object.defineProperty(a,"prototype",{writable:!1}),a}// import JSZip from "jszip";
+var jsPsychNextcloudFiledropPlugin=function(a){"use strict";var b={name:"nextcloud-upload",parameters:{url:{type:a.ParameterType.STRING,default:void 0},folder:{type:a.ParameterType.STRING,default:void 0},filename:{type:a.ParameterType.FUNCTION,default:null},generate_download_url_on_error:{type:a.ParameterType.BOOL,default:!1}}},c=/*#__PURE__*/function(){function a(b){_classCallCheck(this,a),this.jsPsych=b}return _createClass(a,[{key:"trial",value:function trial(a,b){var c=this,d=this.jsPsych.data.get().json(),e=null==b.filename?new Date().toJSON()+".zip":b.filename(this.jsPsych),f={filename:e,error:!1},g=document.createElement("div");g.id="jspsych-loading-progress-bar-container",g.style.height="10px",g.style.width="300px",g.style.backgroundColor="#ddd",g.style.margin="auto";var h=document.createElement("p"),i=document.createElement("div");i.id="jspsych-loading-progress-bar",i.style.height="10px",i.style.width="0px",i.style.backgroundColor="#777",g.appendChild(i),this.jsPsych.getDisplayElement().appendChild(h),this.jsPsych.getDisplayElement().appendChild(g);var j=new JSZip;j.file("data.json",d),j.generateAsync({type:"blob"},function(a){h.innerHTML="Compressing data, please be patient.";var b=a.percent.toFixed(2);// console.log("Compression progress: " + perc);
+i.style.width=b+"%"}).then(function(d){var j=new XMLHttpRequest;// Progress callback
+j.upload.addEventListener("progress",function(a){var b=Math.round;h.innerHTML="Uploading data, please be patient.",console.log("Upload progress: "+b(100*(a.loaded/a.total))),i.style.width=b(100*(a.loaded/a.total))+"%"}),j.addEventListener("loadend",function(){console.log("Upload finished."),c.jsPsych.getDisplayElement().removeChild(h),c.jsPsych.getDisplayElement().removeChild(g),a.innerHTML="Upload finished.",c.jsPsych.finishTrial(f)}),j.addEventListener("error",function(a){console.log("Upload error.",a),f.error=!0,b.generate_download_url_on_error&&(f.url=URL.createObjectURL(d),f.filename=e)});var k=b.url+"/public.php/webdav/"+e;j.open("PUT",k,!0),j.setRequestHeader("Authorization","Basic "+btoa(b.folder+":")),j.send(d)})}}]),a}();/**
+   * **NEXTCLOUD-UPLOAD**
+   *
+   * This plugin can be used to save jsPsych data
+   * to a nextcloud instance using the file-drop method.
+   * I.E. you can use a
+   *
+   * @author YOUR NAME
+   * @see {@link https://DOCUMENTATION_URL DOCUMENTATION LINK TEXT}
+   */return c.info=b,c}(jsPsychModule);
+
+//# sourceMappingURL=index.browser.min.js.map
