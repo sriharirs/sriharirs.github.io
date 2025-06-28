@@ -26,6 +26,11 @@ video {
   transform: rotateY(180deg);
 }
 
+/* Hide webcam feed, only avatar will be visible */
+#webcam {
+  display: none !important;
+}
+
 section {
   opacity: 1;
   transition: opacity .5s ease-in-out;
@@ -116,5 +121,3 @@ header, footer {
   height: 16px;
   display: flex;
 }
-
-/*# sourceMappingURL=index.a4b8b2d2.css.map */
