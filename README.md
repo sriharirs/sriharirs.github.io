@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # MediaPipe & Three.js Virutal Mirror
 ## Files
 The project consists of several important files:
@@ -86,3 +87,7 @@ Adding new action units would require updating the *head.gltf* file. The easiest
 - "mouthUpperUpRight",
 - "noseSneerLeft",
 - "noseSneerRight"
+=======
+# updatedccsrexp
+Updated CCSR experiment
+>>>>>>> ad6dfa6f061ec413b1e4f1c73e6317cd41570062
